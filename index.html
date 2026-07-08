@@ -124,6 +124,38 @@
   .venn-chip.reponly .vnum{color:var(--orange-soft);}
   .venn-chip.merchonly .vnum{color:var(--amber);}
 
+  #panel-dashboard .dashboard-top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid rgba(157,196,236,.14);}
+  #panel-dashboard .dashboard-top h2{margin:0 0 5px;}
+  #panel-dashboard .dashboard-sub{margin:0;color:var(--blue-light);font-size:12.5px;line-height:1.45;}
+  #panel-dashboard .dashboard-actions{display:flex;gap:8px;flex-wrap:wrap;}
+  #panel-dashboard .dashboard-actions .ghost-btn{padding:8px 13px;font-size:12px;border-radius:8px;}
+  #panel-dashboard .dashboard-meta{font-size:11.5px;color:var(--blue-light);margin-bottom:12px;}
+  #panel-dashboard .dashboard-filter-panel{border:1px solid rgba(157,196,236,.14);background:rgba(8,29,56,.48);border-radius:9px;padding:12px;margin-bottom:14px;}
+  #panel-dashboard .dashboard-filter-row{display:grid;grid-template-columns:repeat(3,minmax(150px,1fr)) minmax(220px,1.4fr) auto;gap:10px;align-items:end;}
+  #panel-dashboard .dash-filter-field{display:flex;flex-direction:column;gap:5px;min-width:0;}
+  #panel-dashboard .dash-filter-field span{font-size:10px;color:var(--blue-light);font-weight:700;text-transform:uppercase;letter-spacing:.35px;}
+  #panel-dashboard .dash-filter-field select,#panel-dashboard .dash-filter-field input{width:100%;background:var(--bg-deep);border:1px solid var(--border);color:var(--text-head2);padding:8px 10px;border-radius:7px;font-size:12px;font-family:inherit;min-height:36px;}
+  #panel-dashboard .dash-filter-field input::placeholder{color:rgba(157,196,236,.62);}
+  #panel-dashboard .dashboard-filter-panel .ghost-btn{height:36px;padding:8px 12px;font-size:12px;border-radius:7px;white-space:nowrap;}
+  #panel-dashboard .dashboard-filter-summary{margin-top:9px;color:var(--blue-light);font-size:11.5px;}
+  #panel-dashboard .dashboard-kpi-row{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:1px;margin-bottom:14px;border:1px solid rgba(157,196,236,.14);border-radius:8px;overflow:hidden;background:rgba(157,196,236,.10);}
+  #panel-dashboard .dashboard-kpi-row .kpi-card{border:0;border-radius:0;background:rgba(8,29,56,.86);padding:12px 14px;}
+  #panel-dashboard .dashboard-kpi-row .kpi-card::before{width:2px;opacity:.65;}
+  #panel-dashboard .dashboard-kpi-row .kpi-card .kpi-num{font-size:21px;}
+  #panel-dashboard .dashboard-kpi-row .kpi-card .kpi-lbl{font-size:9.5px;margin-top:4px;}
+  #panel-dashboard .dashboard-focus-row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:10px 0 12px;}
+  #panel-dashboard .dashboard-focus-row .section-title{margin:0;}
+  #panel-dashboard .master-tabs{margin-bottom:0;}
+  #panel-dashboard .stat-row{grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;margin-bottom:14px;border:1px solid rgba(157,196,236,.14);border-radius:8px;overflow:hidden;background:rgba(157,196,236,.10);}
+  #panel-dashboard .stat-row .stat-card{border:0;border-radius:0;background:rgba(8,29,56,.78);padding:12px;}
+  #panel-dashboard .stat-row .stat-card .num{font-size:22px;}
+  #panel-dashboard .dash-card{border-radius:8px;padding:16px;background:rgba(8,29,56,.62);}
+  #panel-dashboard .dash-card h3{font-size:13px;text-transform:none;letter-spacing:0;}
+  #panel-dashboard .dash-grid{gap:14px;}
+  #panel-dashboard .bar-label{width:150px;}
+  @media (max-width:1050px){#panel-dashboard .dashboard-filter-row{grid-template-columns:repeat(2,minmax(150px,1fr));}#panel-dashboard .dashboard-kpi-row{grid-template-columns:repeat(3,1fr);}}
+  @media (max-width:760px){#panel-dashboard .dashboard-filter-row,#panel-dashboard .dashboard-kpi-row,#panel-dashboard .stat-row{grid-template-columns:1fr;}#panel-dashboard .dash-grid{grid-template-columns:1fr;}}
+
   /* Exceptions sidebar layout */
   .exc-sidebar{width:230px;flex-shrink:0;background:var(--bg-deep);border-right:1px solid var(--border);padding:20px 12px;max-height:820px;overflow-y:auto;}
   @media (max-width:820px){.exc-sidebar{width:100%;max-height:none;border-right:none;border-bottom:1px solid var(--border);display:flex;flex-wrap:wrap;gap:6px;}}
@@ -216,6 +248,7 @@
 
   .exc-table-wrap{border:1px solid var(--border);border-radius:12px;overflow:hidden;}
   .exc-row-grid{display:grid;grid-template-columns:104px 112px 1fr 96px 110px 1.7fr 1.4fr;}
+  .exc-row-grid.schedule-pair-grid{grid-template-columns:92px minmax(170px,1.2fr) minmax(190px,1.25fr) 105px 115px minmax(190px,1.45fr) minmax(150px,1fr);}
   .exc-header-row > div{padding:10px 12px;border-bottom:1px solid var(--border);background:var(--bg-deep);color:var(--blue-light);font-size:10px;text-transform:uppercase;letter-spacing:.4px;font-weight:700;}
   .exc-data-row{border-bottom:1px solid rgba(255,255,255,.05);}
   .exc-data-row:last-child{border-bottom:none;}
@@ -223,6 +256,9 @@
   .exc-data-row:hover{background:rgba(236,109,37,.06);}
   .exc-data-row > div{padding:11px 12px;font-size:12px;color:var(--text-body2);display:flex;align-items:center;}
   .exc-cell-code{color:var(--text-head2);font-weight:600;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;}
+  .exc-primary-cell{flex-direction:column;align-items:flex-start!important;gap:3px;min-width:0;}
+  .exc-primary-main{color:var(--text-head2);font-weight:650;line-height:1.25;overflow-wrap:anywhere;}
+  .exc-primary-sub{color:var(--blue-light);font-size:11px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;line-height:1.25;}
   .exc-cell-issue{flex-direction:column;align-items:flex-start;gap:2px;}
   .exc-issue-main{color:var(--text-head2);font-weight:600;}
   .exc-issue-detail{color:var(--blue-light);font-size:11px;line-height:1.5;opacity:.8;}
@@ -979,6 +1015,7 @@ function processFilesInner(){
     const u = userLookup.get(ucode);
     if(u && u.roleBucket === 'Merchandiser'){
       const store = storeLookup.get(scode) || {};
+      if(store.active !== true) return;
       const {rep, manager} = getRepAndManager(u.managerCode);
       const hours = timeToHours(r['Start Time'], r['End Time']);
       merchHourRows.push({
@@ -1137,9 +1174,11 @@ function processFilesInner(){
     const key = [s(r['User Code']), s(r['Meridian Store Code']), s(r['Week Number']), s(r['Day of Week'])].join('|');
     if(looseDupSeen.get(key) > 1 && !flaggedLooseDupKeys.has(key)){
       flaggedLooseDupKeys.add(key);
+      const ucode = s(r['User Code']), user = userLookup.get(ucode);
       const scode = s(r['Meridian Store Code']); const st = storeLookup.get(scode);
       other.push({cat:'Multiple schedule entries - same store, same day',
-        detail:`User ${s(r['User Code'])} at store ${scode}, Week ${s(r['Week Number'])} ${s(r['Day of Week'])} has ${looseDupSeen.get(key)} separate schedule entries`,
+        userCode:ucode, userName:user?user.fullName:'', storeCode:scode, storeName:st?(st.customerName||''):'',
+        detail:`${user?user.fullName:'User '+ucode} (${ucode}) at ${st?(st.customerName||'store'):'store'} (${scode}), Week ${s(r['Week Number'])} ${s(r['Day of Week'])} has ${looseDupSeen.get(key)} separate schedule entries`,
         region: st?(st.region||''):'', banner: st?(st.banner||''):''});
     }
   });
@@ -1186,11 +1225,17 @@ function processFilesInner(){
     const vals = [...dayMap.values()];
     if(vals.length===0) return;
     const mx = Math.max(...vals), mn = Math.min(...vals);
+    const userName = u ? u.fullName : ucode;
+    const userRegion = u ? (u.assignedRegions || '') : '';
     if(mx >= OVERLOAD_THRESHOLD){
-      other.push({cat:'Rep/merchandiser overloaded on a day', detail:`${u?u.fullName:ucode} has a day with ${mx} distinct stores assigned`, region:'', banner:''});
+      other.push({cat:'Rep/merchandiser overloaded on a day',
+        userCode:ucode, userName,
+        detail:`${userName} has a day with ${mx} distinct stores assigned`, region:userRegion, banner:''});
     }
     if(mx >= 5 && mx >= 3*Math.max(mn,1)){
-      other.push({cat:'Rep/merchandiser under-utilised on a day', detail:`${u?u.fullName:ucode} ranges from ${mn} to ${mx} distinct stores across the week — some days far lighter than others`, region:'', banner:''});
+      other.push({cat:'Rep/merchandiser under-utilised on a day',
+        userCode:ucode, userName,
+        detail:`${userName} ranges from ${mn} to ${mx} distinct stores across the week - some days far lighter than others`, region:userRegion, banner:''});
     }
   });
 
@@ -1279,7 +1324,9 @@ function processFilesInner(){
     if(seenRegionMismatch.has(key)) return;
     if(normalizeForCompare(u.assignedRegions) !== normalizeForCompare(st.region)){
       seenRegionMismatch.add(key);
-      other.push({cat:'Region mismatch between user and store', detail:`${u.fullName} assigned to "${u.assignedRegions}" but scheduled at store ${data.scode} in "${st.region}"`, region: st.region, banner: st.banner});
+      other.push({cat:'Region mismatch between user and store',
+        userCode:data.ucode, userName:u.fullName, storeCode:data.scode, storeName:st.customerName||'',
+        detail:`${u.fullName} assigned to "${u.assignedRegions}" but scheduled at store ${data.scode} in "${st.region}"`, region: st.region, banner: st.banner});
     }
   });
 
@@ -1347,8 +1394,11 @@ function processFilesInner(){
     const key = [s(r['User Code']), s(r['Meridian Store Code']), s(r['Week Number']), s(r['Day of Week']), s(r['Start Time']), s(r['End Time'])].join('|');
     if(schedDupSeen.get(key) > 1 && !flaggedDupKeys.has(key)){
       flaggedDupKeys.add(key);
+      const ucode = s(r['User Code']), user = userLookup.get(ucode);
       const scode = s(r['Meridian Store Code']); const st = storeLookup.get(scode);
-      other.push({cat:'Duplicate schedule row', detail:`User ${s(r['User Code'])} at store ${scode}, Week ${s(r['Week Number'])} ${s(r['Day of Week'])} ${s(r['Start Time'])}-${s(r['End Time'])} appears ${schedDupSeen.get(key)} times in the raw schedule export`,
+      other.push({cat:'Duplicate schedule row',
+        userCode:ucode, userName:user?user.fullName:'', storeCode:scode, storeName:st?(st.customerName||''):'',
+        detail:`${user?user.fullName:'User '+ucode} (${ucode}) at ${st?(st.customerName||'store'):'store'} (${scode}), Week ${s(r['Week Number'])} ${s(r['Day of Week'])} ${s(r['Start Time'])}-${s(r['End Time'])} appears ${schedDupSeen.get(key)} times in the raw schedule export`,
         region: st?(st.region||''):'', banner: st?(st.banner||''):''});
     }
   });
@@ -1821,6 +1871,78 @@ function parseEntity(detail){
   if(m) return {code:m[1], name:''};
   return {code:'', name:''};
 }
+function hasSchedulePairFields(e){
+  return !!(e && (e.userCode || e.userName || e.storeCode || e.storeName));
+}
+function isSchedulePairCategory(cat){
+  return cat === 'Multiple schedule entries - same store, same day'
+    || cat === 'Duplicate schedule row'
+    || cat === 'Region mismatch between user and store';
+}
+function parseStoreCodeFromDetail(detail){
+  const m = detail.match(/\bat store\s+([A-Za-z0-9\-\/]+)/i) || detail.match(/\(([A-Za-z]{2,}\d+)\)/);
+  return m ? m[1] : '';
+}
+function parseRegionMismatchUserName(detail){
+  const m = detail.match(/^(.+?)\s+assigned to\b/i);
+  return m ? m[1].replace(/^"+|"+$/g,'').trim() : '';
+}
+function parseWorkloadUserName(detail){
+  const m = detail.match(/^(.+?)\s+(?:has a day with|ranges from)\b/i);
+  return m ? m[1].replace(/^"+|"+$/g,'').trim() : '';
+}
+function findUserCodeByName(name){
+  const target = s(name).toLowerCase();
+  if(!target || !state.userLookup) return '';
+  for(const [code, user] of state.userLookup.entries()){
+    if(s(user.fullName).toLowerCase() === target) return code;
+  }
+  return '';
+}
+function displayEntity(e, meta){
+  const parsed = parseEntity(e.detail);
+  if(meta.entityType === 'store'){
+    return {code:e.storeCode || parsed.code, name:e.storeName || parsed.name};
+  }
+  if(meta.entityType === 'user'){
+    const workloadName = (e.cat === 'Rep/merchandiser overloaded on a day' || e.cat === 'Rep/merchandiser under-utilised on a day')
+      ? parseWorkloadUserName(e.detail) : '';
+    const fallbackName = workloadName || parsed.name;
+    return {code:e.userCode || parsed.code || findUserCodeByName(fallbackName), name:e.userName || fallbackName};
+  }
+  return {code:e.code || parsed.code, name:e.name || parsed.name};
+}
+function schedulePairDisplay(e, meta){
+  const person = displayEntity(e, meta);
+  const regionMismatchName = e.cat === 'Region mismatch between user and store' ? parseRegionMismatchUserName(e.detail) : '';
+  const userCode = e.userCode || (regionMismatchName ? findUserCodeByName(regionMismatchName) : person.code);
+  const storeCode = e.storeCode || parseStoreCodeFromDetail(e.detail);
+  const user = state.userLookup && userCode ? state.userLookup.get(userCode) : null;
+  const store = state.storeLookup && storeCode ? state.storeLookup.get(storeCode) : null;
+  const isScheduleRow = e.cat === 'Multiple schedule entries - same store, same day' || e.cat === 'Duplicate schedule row';
+  return {
+    code:userCode,
+    name:e.userName || (user?user.fullName:'') || regionMismatchName || person.name || (isScheduleRow && userCode ? 'Not found in User List' : ''),
+    storeCode,
+    storeName:e.storeName || (store?store.customerName:'') || (isScheduleRow && storeCode ? 'Not found in Locations Export' : '')
+  };
+}
+function displayRegion(e, meta, code){
+  if(e.region) return e.region;
+  if(meta.entityType === 'user' && state.userLookup && code){
+    const user = state.userLookup.get(code);
+    return user ? (user.assignedRegions || '') : '';
+  }
+  return '';
+}
+function scheduleIssueDetail(e){
+  if(e.cat === 'Multiple schedule entries - same store, same day' || e.cat === 'Duplicate schedule row'){
+    return e.detail
+      .replace(/^.*?\([A-Za-z0-9\-\/]+\)\s+at\s+.*?\([A-Za-z]{2,}\d+\),\s*/i, '')
+      .replace(/^User\s+[A-Za-z0-9\-\/]+\s+at\s+store\s+[A-Za-z0-9\-\/]+,\s*/i, '');
+  }
+  return e.detail;
+}
 function renderOverallExcKpis(){
   const counts = {critical:0, warning:0, info:0};
   const storeCodes = new Set();
@@ -1848,8 +1970,17 @@ function exportCurrentCategory(){
   if(items.length===0){ showToast('Nothing to export for this category (with the current filter).', 'error', 'Export skipped'); return; }
   const meta = getCategoryMeta(cat);
   const rows = items.map(e=>{
-    const {code, name} = parseEntity(e.detail);
-    return { Severity: severityLabel(meta.severity), Code: code, Name: name, Region: e.region, Banner: e.banner, Issue: categoryLabel(cat, meta), Detail: e.detail, 'Suggested Action': meta.action };
+    const usesSchedulePair = isSchedulePairCategory(cat) || hasSchedulePairFields(e);
+    const display = usesSchedulePair ? schedulePairDisplay(e, meta) : displayEntity(e, meta);
+    const {code, name} = display;
+    const row = { Severity: severityLabel(meta.severity), Code: code, Name: name, Region: displayRegion(e, meta, code), Banner: e.banner, Issue: categoryLabel(cat, meta), Detail: e.detail, 'Suggested Action': meta.action };
+    if(usesSchedulePair){
+      row['User Code'] = code;
+      row['User Name'] = name;
+      row['MER Store Code'] = display.storeCode || '';
+      row['Store Name'] = display.storeName || '';
+    }
+    return row;
   });
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), safeSheetName(categoryLabel(cat, meta), new Set()));
@@ -1878,6 +2009,7 @@ function renderOtherCategory(){
   renderOverallExcKpis();
 
   const filtered = applyRegionBannerFilter(state.otherExceptions.filter(e=>e.cat===cat));
+  const showsSchedulePair = isSchedulePairCategory(cat) || filtered.some(hasSchedulePairFields);
   const regions = new Set(filtered.map(e=>e.region).filter(Boolean));
   const banners = new Set(filtered.map(e=>e.banner).filter(Boolean));
   const storeCodes = new Set();
@@ -1902,13 +2034,20 @@ function renderOtherCategory(){
   panel.className = 'exc-insight-panel' + (meta.severity==='critical' ? ' is-critical' : meta.severity==='warning' ? ' is-warning' : '');
   panel.innerHTML = `<b>${esc(label)}:</b> ${esc(meta.insight)}`;
 
-  el('excHeaderRow').innerHTML = `<div>Severity</div><div>${esc(codeHeader)}</div><div>${esc(nameHeader)}</div><div>Region</div><div>Banner</div><div>Issue</div><div>Suggested Action</div>`;
+  el('excHeaderRow').classList.toggle('schedule-pair-grid', showsSchedulePair);
+  el('excHeaderRow').innerHTML = showsSchedulePair
+    ? `<div>Severity</div><div>Person</div><div>Store</div><div>Region</div><div>Banner</div><div>Issue</div><div>Suggested Action</div>`
+    : `<div>Severity</div><div>${esc(codeHeader)}</div><div>${esc(nameHeader)}</div><div>Region</div><div>Banner</div><div>Issue</div><div>Suggested Action</div>`;
 
   const q = (state.excSearch||'').trim().toLowerCase();
-  let rows = filtered.map(e=>{ const {code, name} = parseEntity(e.detail); return {e, code, name}; });
+  let rows = filtered.map(e=>{
+    const display = showsSchedulePair ? schedulePairDisplay(e, meta) : displayEntity(e, meta);
+    return {e, code:display.code, name:display.name, region:displayRegion(e, meta, display.code), storeCode:display.storeCode||'', storeName:display.storeName||''};
+  });
   if(q){
     rows = rows.filter(r => (r.code||'').toLowerCase().includes(q) || (r.name||'').toLowerCase().includes(q)
-      || (r.e.region||'').toLowerCase().includes(q) || (r.e.banner||'').toLowerCase().includes(q) || r.e.detail.toLowerCase().includes(q));
+      || (r.storeCode||'').toLowerCase().includes(q) || (r.storeName||'').toLowerCase().includes(q)
+      || (r.region||'').toLowerCase().includes(q) || (r.e.banner||'').toLowerCase().includes(q) || r.e.detail.toLowerCase().includes(q));
   }
 
   const list = el('otherCatList');
@@ -1922,12 +2061,30 @@ function renderOtherCategory(){
   const visible = showAll ? rows : rows.slice(0, LIMIT);
   el('excResultCount').textContent = showAll ? `Showing ${rows.length} of ${rows.length}` : `Showing ${LIMIT} of ${rows.length}`;
 
-  const rowsHtml = visible.map(({e, code, name})=>`
+  const rowsHtml = visible.map(({e, code, name, region, storeCode, storeName})=> showsSchedulePair ? `
+    <div class="exc-row-grid schedule-pair-grid exc-data-row">
+      <div data-label="Severity"><span class="severity-pill ${meta.severity}">${esc(severityLabel(meta.severity))}</span></div>
+      <div class="exc-primary-cell" data-label="Person">
+        <div class="exc-primary-main">${esc(name)||'\u2014'}</div>
+        <div class="exc-primary-sub">${esc(code)||'\u2014'}</div>
+      </div>
+      <div class="exc-primary-cell" data-label="Store">
+        <div class="exc-primary-main">${esc(storeName)||'\u2014'}</div>
+        <div class="exc-primary-sub">${esc(storeCode)||'\u2014'}</div>
+      </div>
+      <div data-label="Region">${esc(region)||'\u2014'}</div>
+      <div data-label="Banner">${esc(e.banner)||'\u2014'}</div>
+      <div class="exc-cell-issue" data-label="Issue">
+        <div class="exc-issue-main">${esc(label)}</div>
+        <div class="exc-issue-detail">${esc(scheduleIssueDetail(e))}</div>
+      </div>
+      <div data-label="Suggested Action">${esc(meta.action)}</div>
+    </div>` : `
     <div class="exc-row-grid exc-data-row">
       <div data-label="Severity"><span class="severity-pill ${meta.severity}">${esc(severityLabel(meta.severity))}</span></div>
       <div class="exc-cell-code" data-label="${esc(codeHeader)}">${esc(code)||'\u2014'}</div>
       <div data-label="${esc(nameHeader)}">${esc(name)||'\u2014'}</div>
-      <div data-label="Region">${esc(e.region)||'\u2014'}</div>
+      <div data-label="Region">${esc(region)||'\u2014'}</div>
       <div data-label="Banner">${esc(e.banner)||'\u2014'}</div>
       <div class="exc-cell-issue" data-label="Issue">
         <div class="exc-issue-main">${esc(label)}</div>
@@ -2157,7 +2314,7 @@ function buildMasterRows(bucket){
     const u = state.userLookup.get(data.ucode);
     if(!u || u.roleBucket !== bucket) return;
     const store = state.storeLookup.get(data.scode) || {};
-    if(store.status && !store.active) return;
+    if(store.active !== true) return;
     let dupCheck = 'OK';
     if(bucket==='Rep'){
       const conflict = conflictMap.get(data.scode+'|'+state.resourceTypeLabelFn(u, 'REP'));
@@ -2257,10 +2414,13 @@ function exportMerchHoursStandalone(){
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(state.merchHourRows), 'National');
   const custRows = [];
-  state.storeLookup.forEach((v, code)=> custRows.push({
+  state.storeLookup.forEach((v, code)=>{
+    if(v.active !== true) return;
+    custRows.push({
     'Customer Name': v.customerName, 'Meridian Store Code': code, 'Banner': v.banner,
     'Active': v.active ? 'Y' : 'N', 'Division': v.division, 'Channel': '', 'Region': v.region
-  }));
+  });
+  });
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(custRows), 'Customer List');
   const userRows = [];
   state.userLookup.forEach((u, code)=>{
