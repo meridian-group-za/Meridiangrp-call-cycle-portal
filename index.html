@@ -98,7 +98,7 @@
   table.master-tbl td{padding:6px 9px;border-bottom:1px solid rgba(255,255,255,.04);color:var(--text-body2);white-space:nowrap;}
   .empty-msg{color:var(--blue-light);font-size:13px;text-align:center;padding:30px 0;}
   .search-box{width:100%;max-width:320px;background:var(--bg-deep);border:1px solid var(--border);color:var(--text-head2);padding:9px 12px;border-radius:8px;font-size:13px;margin-bottom:14px;font-family:inherit;}
-  .step-hidden{display:none;}
+  .step-hidden{display:none !important;}
   .master-tabs{display:flex;gap:8px;margin-bottom:16px;}
   .master-tab-btn{background:var(--bubble2);border:1px solid var(--border);color:var(--text-body2);padding:8px 18px;border-radius:8px;font-size:12.5px;cursor:pointer;}
   .master-tab-btn.active{background:var(--orange);color:#1a1005;border-color:var(--orange);}
@@ -247,25 +247,25 @@
   #panel-exceptions .exceptions-header{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid rgba(157,196,236,.12);}
   #panel-exceptions .exceptions-header .primary-btn{padding:9px 16px;font-size:12.5px;border-radius:8px;}
 
-  #panel-exceptions .processing-summary-wrap{display:flex;align-items:stretch;gap:0;margin:0 0 14px;border:1px solid rgba(157,196,236,.18);border-radius:8px;overflow:hidden;background:rgba(8,27,52,.46);}
+  #panel-exceptions .processing-summary-wrap{display:flex;align-items:stretch;gap:0;margin:0 0 10px;border:1px solid rgba(157,196,236,.14);border-radius:7px;overflow:hidden;background:rgba(8,27,52,.34);}
   #panel-exceptions .summary-label{display:flex;align-items:center;padding:0 12px;background:rgba(157,196,236,.08);color:var(--blue-light);font-size:10px;font-weight:700;text-transform:uppercase;white-space:nowrap;}
   #panel-exceptions .processing-summary-bar{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:1px;flex:1;background:rgba(157,196,236,.10);}
-  #panel-exceptions .summary-metric{background:var(--bubble2);padding:8px 10px;min-width:0;}
-  #panel-exceptions .summary-value{color:var(--text-head);font-size:16px;font-weight:700;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  #panel-exceptions .summary-title{color:var(--blue-light);font-size:10px;font-weight:600;text-transform:uppercase;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  #panel-exceptions .summary-metric{background:rgba(8,29,56,.82);padding:6px 9px;min-width:0;}
+  #panel-exceptions .summary-value{color:var(--text-head);font-size:14px;font-weight:700;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  #panel-exceptions .summary-title{color:var(--blue-light);font-size:9.5px;font-weight:600;text-transform:uppercase;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   #panel-exceptions .summary-metric.good .summary-value{color:var(--green);}
   #panel-exceptions .summary-metric.warn .summary-value{color:var(--amber);}
   #panel-exceptions .summary-metric.bad .summary-value{color:var(--red);}
 
-  #panel-exceptions .compact-kpi-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:0 0 12px;}
-  #panel-exceptions .mini-kpi{background:rgba(8,29,56,.72);border:1px solid rgba(157,196,236,.16);border-radius:8px;padding:9px 11px;min-width:0;}
-  #panel-exceptions .mini-kpi .num{color:var(--text-head);font-size:20px;font-weight:700;line-height:1.1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-  #panel-exceptions .mini-kpi .lbl{color:var(--blue-light);font-size:10px;font-weight:700;text-transform:uppercase;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  #panel-exceptions .compact-kpi-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;margin:0 0 10px;border:1px solid rgba(157,196,236,.14);border-radius:7px;overflow:hidden;background:rgba(157,196,236,.10);}
+  #panel-exceptions .mini-kpi{background:rgba(8,29,56,.82);border:0;border-radius:0;padding:7px 10px;min-width:0;}
+  #panel-exceptions .mini-kpi .num{color:var(--text-head);font-size:17px;font-weight:700;line-height:1.05;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  #panel-exceptions .mini-kpi .lbl{color:var(--blue-light);font-size:9.5px;font-weight:700;text-transform:uppercase;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
   #panel-exceptions .mini-kpi.pending .num{color:var(--amber);}
   #panel-exceptions .mini-kpi.resolved .num{color:var(--green);}
   #panel-exceptions .compact-kpi-row > .stat-card{display:none;}
 
-  #panel-exceptions .exc-sidebar{width:214px;padding:14px 8px;max-height:calc(100vh - 150px);background:rgba(8,27,52,.72);}
+  #panel-exceptions .exc-sidebar{width:214px;padding:14px 8px;max-height:none;overflow-y:visible;background:rgba(8,27,52,.72);}
   #panel-exceptions .exc-nav-section-label{padding:10px 9px 5px;font-size:9.5px;letter-spacing:.4px;}
   #panel-exceptions .exc-nav-item{padding:7px 8px;border-radius:7px;font-size:11.5px;line-height:1.25;margin-bottom:3px;gap:7px;}
   #panel-exceptions .exc-nav-label{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
@@ -304,8 +304,10 @@
   #panel-exceptions .btn-confirm,#panel-exceptions .btn-keepboth,#panel-exceptions .btn-undo{border-radius:7px;font-size:11.5px;padding:7px 12px;}
   #panel-exceptions .resolved-tag{border-radius:7px;font-size:11px;}
 
-  #panel-exceptions .exc-toolbar{margin-bottom:12px;}
-  #panel-exceptions .exc-insight-panel{margin-bottom:12px;padding:10px 12px;border-radius:8px;font-size:11.5px;line-height:1.5;background:rgba(157,196,236,.06);}
+  #panel-exceptions .exc-toolbar{margin-bottom:9px;align-items:center;}
+  #panel-exceptions .exc-toolbar h3{font-size:16px;}
+  #panel-exceptions .exc-toolbar-actions .ghost-btn,#panel-exceptions .exc-toolbar-actions .primary-btn{padding:8px 12px;font-size:12px;border-radius:7px;}
+  #panel-exceptions .exc-insight-panel{margin-bottom:10px;padding:7px 10px;border:0;border-left:2px solid var(--blue-light);border-radius:6px;font-size:11.5px;line-height:1.45;background:rgba(157,196,236,.045);}
   #panel-exceptions .exc-table-controls{margin-bottom:10px;}
   #panel-exceptions .exc-table-wrap{border-radius:8px;}
   #panel-exceptions .exc-header-row > div{padding:8px 10px;font-size:9.5px;}
@@ -525,7 +527,7 @@
         <div class="exceptions-header">
           <div>
             <h2 style="margin-bottom:2px;">Exceptions</h2>
-            <p class="hint" style="margin-bottom:0;" id="excCategoryHint">Rep conflicts must be resolved before the final master is released. Other exceptions are included for visibility and operational follow-up.</p>
+            <p class="hint" style="margin-bottom:0;" id="excCategoryHint">Review data-quality exceptions before export. Rep conflicts stay visible as exceptions and are included in the master with a clear flag until resolved.</p>
           </div>
           <button class="primary-btn" onclick="exportExceptions()">Export exceptions to Excel</button>
         </div>
@@ -570,7 +572,7 @@
             </div>
           </div>
 
-          <div class="kpi-grid step-hidden" id="overallExcKpis"></div>
+          <div class="step-hidden" id="overallExcKpis"></div>
           <div class="compact-kpi-row" id="statOtherCat"></div>
 
           <div class="exc-insight-panel" id="excInsightPanel"></div>
@@ -597,7 +599,7 @@
   <!-- STEP 3: MASTERS -->
   <div class="panel step-hidden" id="panel-masters">
     <h2>Validated Call-Cycle Master</h2>
-    <p class="hint">Review the final validated call-cycle master before export. Unresolved rep conflicts are held out until confirmed, ensuring only clean and approved store-resource mappings are included.</p>
+    <p class="hint">Review the final validated call-cycle master before export. Unresolved rep conflicts are included and clearly flagged in the master until confirmed.</p>
     <div class="warn-banner step-hidden" id="unresolvedWarning"></div>
     <div class="master-tabs">
       <div class="master-tab-btn active" data-mf="all" onclick="setMasterFilter('all')">All resources</div>
@@ -658,7 +660,7 @@
       <div class="dash-card"><h3 id="dashBannerTitle">Stores by banner</h3><div id="dashBanner"></div></div>
       <div class="dash-card"><h3 id="dashFreqTitle">Calling frequency</h3><div id="dashFreq"></div></div>
       <div class="dash-card"><h3 id="dashTypeTitle">Resource type breakdown</h3><div id="dashType"></div></div>
-      <div class="dash-card" style="grid-column:1/-1;"><h3>Conflict backlog (affects master completeness)</h3><div id="dashConflicts"></div></div>
+      <div class="dash-card" style="grid-column:1/-1;"><h3>Rep conflict review</h3><div id="dashConflicts"></div></div>
     </div>
 
     <h2 class="section-title" style="margin-top:22px;">Last Run / Audit Trail</h2>
@@ -1618,6 +1620,10 @@ function renderDashboard(){
     <div class="bar-row"><div class="bar-label">Resolved</div><div class="bar-track"><div class="bar-fill" style="width:${pct}%"></div></div><div class="bar-count">${snap.conflicts.resolved}</div></div>
     <div class="bar-row"><div class="bar-label">Pending</div><div class="bar-track"><div class="bar-fill" style="width:${100-pct}%;background:linear-gradient(90deg,var(--amber),var(--orange-soft));"></div></div><div class="bar-count">${snap.conflicts.pending}</div></div>
     <div style="margin-top:8px;font-size:11.5px;color:var(--blue-light);">${snap.conflicts.pending>0? snap.conflicts.pending+' store(s) missing from the master until resolved.' : 'All rep conflicts resolved — master is complete.'}</div>`;
+  const conflictNote = el('dashConflicts').lastElementChild;
+  if(conflictNote) conflictNote.textContent = snap.conflicts.pending>0
+    ? snap.conflicts.pending+' rep conflict(s) still need review and are flagged in the master.'
+    : 'All rep conflicts resolved.';
 }
 
 // ---------- CONFLICTS UI ----------
@@ -1730,9 +1736,9 @@ function renderExcSidebar(){
     const label = sidebarCategoryLabel(cat, getCategoryMeta(cat));
     return `<div class="exc-nav-item ${active===cat?'active':''}" onclick="setExcCategory('${esc(cat)}')"><span class="exc-nav-label" title="${esc(fullLabel)}">${esc(label)}</span><span class="exc-nav-count">${n}</span></div>`;
   }
-  let html = `<div class="exc-nav-section-label">Blocks the master</div>` + navItem('Rep Conflict', state.conflicts.length);
+  let html = '';
   if(coverageCats.length) html += `<div class="exc-nav-section-label">Coverage</div>` + coverageCats.sort((a,b)=>b[1]-a[1]).map(([c,n])=>navItem(c,n)).join('');
-  if(dataCats.length) html += `<div class="exc-nav-section-label">Data quality</div>` + dataCats.sort((a,b)=>b[1]-a[1]).map(([c,n])=>navItem(c,n)).join('');
+  html += `<div class="exc-nav-section-label">Data quality</div>` + navItem('Rep Conflict', state.conflicts.length) + dataCats.sort((a,b)=>b[1]-a[1]).map(([c,n])=>navItem(c,n)).join('');
   if(namingCats.length) html += `<div class="exc-nav-section-label">Naming</div>` + namingCats.sort((a,b)=>b[1]-a[1]).map(([c,n])=>navItem(c,n)).join('');
   el('excSidebar').innerHTML = html;
 }
@@ -2136,8 +2142,10 @@ function buildMasterRows(bucket){
       if(conflict){
         if(conflict.status==='both-accepted'){
           dupCheck = 'KEPT BOTH - override confirmed';
-        } else if(conflict.status!=='resolved' || conflict.resolvedUser!==data.ucode){
-          return; // held out until resolved / not the chosen one
+        } else if(conflict.status!=='resolved'){
+          dupCheck = 'UNRESOLVED REP CONFLICT - review exception';
+        } else if(conflict.resolvedUser!==data.ucode){
+          return; // resolved conflict: only the confirmed resource is included
         } else {
           dupCheck = 'RESOLVED - other candidate of same rep type excluded';
         }
@@ -2184,11 +2192,12 @@ function renderMasterStats(){
     <div class="stat-card resolved"><div class="num">${all.length}</div><div class="lbl">Total rows in combined master</div></div>
     <div class="stat-card"><div class="num">${repCount}</div><div class="lbl">Rep rows</div></div>
     <div class="stat-card"><div class="num">${merchCount}</div><div class="lbl">Merchandiser rows</div></div>
-    <div class="stat-card pending"><div class="num">${pendingConflicts}</div><div class="lbl">Held out (unresolved conflicts)</div></div>`;
+    <div class="stat-card pending"><div class="num">${pendingConflicts}</div><div class="lbl">Flagged rep conflicts</div></div>`;
   const warning = el('unresolvedWarning');
   if(pendingConflicts>0){
     warning.classList.remove('step-hidden');
     warning.textContent = `${pendingConflicts} rep conflict(s) still unresolved — those stores are missing from the master until you confirm which candidate is correct.`;
+    warning.textContent = `${pendingConflicts} rep conflict(s) still unresolved - rows are included in the master and flagged in the Duplicated Check column.`;
   } else warning.classList.add('step-hidden');
 }
 
