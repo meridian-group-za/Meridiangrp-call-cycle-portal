@@ -60,6 +60,9 @@
   .ghost-btn{background:transparent;border:1px solid var(--border);color:var(--text-body2);padding:10px 18px;border-radius:9px;font-size:13px;cursor:pointer;}
   .ghost-btn:hover{border-color:var(--blue-light);color:var(--text-head);}
   .btn-row{display:flex;gap:12px;justify-content:flex-end;margin-top:18px;flex-wrap:wrap;}
+  .panel-heading-row{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;margin-bottom:16px;}
+  .panel-heading-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+  .panel-heading-actions .ghost-btn,.panel-heading-actions .primary-btn{padding:9px 14px;font-size:12.5px;border-radius:8px;}
 
   .stat-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;}
   @media (max-width:800px){.stat-row{grid-template-columns:repeat(2,1fr);}}
@@ -598,8 +601,16 @@
 
   <!-- STEP 3: MASTERS -->
   <div class="panel step-hidden" id="panel-masters">
-    <h2>Validated Call-Cycle Master</h2>
-    <p class="hint">Review the final validated call-cycle master before export. Unresolved rep conflicts are included and clearly flagged in the master until confirmed.</p>
+    <div class="panel-heading-row">
+      <div>
+        <h2>Validated Call-Cycle Master</h2>
+        <p class="hint">Review the final validated call-cycle master before export. Unresolved rep conflicts are included and clearly flagged in the master until confirmed.</p>
+      </div>
+      <div class="panel-heading-actions">
+        <button class="ghost-btn" onclick="goToStep(2)">Back to exceptions</button>
+        <button class="ghost-btn" onclick="goToDashboard()">View dashboard</button>
+      </div>
+    </div>
     <div class="warn-banner step-hidden" id="unresolvedWarning"></div>
     <div class="master-tabs">
       <div class="master-tab-btn active" data-mf="all" onclick="setMasterFilter('all')">All resources</div>
@@ -631,6 +642,10 @@
   <div class="panel step-hidden" id="panel-dashboard">
     <h2>Management Dashboard</h2>
     <p class="hint">Shows your last saved run automatically — no need to re-upload. Updates the moment you resolve a new conflict.</p>
+    <div class="panel-heading-actions" style="margin:10px 0 14px;">
+      <button class="ghost-btn" onclick="goToMasters()">Back to master</button>
+      <button class="ghost-btn" onclick="goToStep(1)">Go to upload</button>
+    </div>
     <div id="dashLastUpdated" style="font-size:11.5px;color:var(--blue-light);margin-bottom:14px;"></div>
 
     <div id="dashboardEmptyState" class="empty-msg step-hidden">No saved run yet — upload and process your files first.</div>
@@ -671,6 +686,7 @@
     </div>
 
     <div class="btn-row">
+      <button class="ghost-btn" onclick="goToMasters()">Back to master</button>
       <button class="ghost-btn" onclick="goToStep(1)">Go to upload</button>
     </div>
   </div>
@@ -772,6 +788,10 @@ function canonicalRegion(value){
 
 function isApprovedRegion(value){
   return APPROVED_REGION_LOOKUP.has(s(value).toUpperCase());
+}
+
+function isActiveStatus(value){
+  return s(value).toLowerCase() === 'active';
 }
 
 let state = {
@@ -938,7 +958,7 @@ function processFilesInner(){
       region: canonicalRegion(rawRegion),
       province: s(r['Province']),
       division: s(r['Division']),
-      status, active: status === 'Active',
+      status, active: isActiveStatus(status),
     });
   });
 
@@ -2136,6 +2156,8 @@ function buildMasterRows(bucket){
   state.agg.forEach((data, key)=>{
     const u = state.userLookup.get(data.ucode);
     if(!u || u.roleBucket !== bucket) return;
+    const store = state.storeLookup.get(data.scode) || {};
+    if(store.status && !store.active) return;
     let dupCheck = 'OK';
     if(bucket==='Rep'){
       const conflict = conflictMap.get(data.scode+'|'+state.resourceTypeLabelFn(u, 'REP'));
@@ -2155,7 +2177,6 @@ function buildMasterRows(bucket){
       const usersAtStore = storeToUsers.get(data.scode) || new Set();
       if(usersAtStore.size > 1) dupCheck = `OK - ${usersAtStore.size} merchandisers at this store (allowed)`;
     }
-    const store = state.storeLookup.get(data.scode) || {};
     const weff = state.weeksEffectiveFn(data.weeks);
     const row = {
       'STORE CODE': state.legacyStoreCodeLookup.get(data.scode) || '', 'STORE NAME': store.customerName||'', 'GEO REP STORE CODE': data.scode,
