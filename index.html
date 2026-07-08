@@ -248,16 +248,19 @@
   .exc-result-count{font-size:11.5px;color:var(--blue-light);white-space:nowrap;}
 
   .exc-table-wrap{border:1px solid var(--border);border-radius:12px;overflow:hidden;}
-  .exc-row-grid{display:grid;grid-template-columns:104px 112px 1fr 96px 110px 1.7fr 1.4fr;}
-  .exc-row-grid.schedule-pair-grid{grid-template-columns:92px minmax(170px,1.2fr) minmax(190px,1.25fr) 105px 115px minmax(190px,1.45fr) minmax(150px,1fr);}
-  .exc-header-row > div{padding:10px 12px;border-bottom:1px solid var(--border);background:var(--bg-deep);color:var(--blue-light);font-size:10px;text-transform:uppercase;letter-spacing:.4px;font-weight:700;}
+  .exc-row-grid{display:grid;grid-template-columns:76px minmax(0,.85fr) minmax(0,1.2fr) minmax(0,.85fr) minmax(0,1.65fr) minmax(0,1.45fr);}
+  .exc-row-grid.schedule-pair-grid{grid-template-columns:76px minmax(0,1.05fr) minmax(0,1.2fr) minmax(0,.85fr) minmax(0,1.6fr) minmax(0,1.45fr);}
+  .exc-row-grid > div{min-width:0;box-sizing:border-box;}
+  .exc-header-row > div{padding:10px 12px;border-bottom:1px solid var(--border);background:var(--bg-deep);color:var(--blue-light);font-size:10px;text-transform:uppercase;letter-spacing:.4px;font-weight:700;line-height:1.25;overflow-wrap:anywhere;}
   .exc-data-row{border-bottom:1px solid rgba(255,255,255,.05);}
   .exc-data-row:last-child{border-bottom:none;}
   .exc-data-row:nth-child(even){background:rgba(255,255,255,.015);}
   .exc-data-row:hover{background:rgba(236,109,37,.06);}
-  .exc-data-row > div{padding:11px 12px;font-size:12px;color:var(--text-body2);display:flex;align-items:center;}
+  .exc-data-row > div{padding:11px 12px;font-size:12px;color:var(--text-body2);display:flex;align-items:center;min-width:0;box-sizing:border-box;overflow-wrap:anywhere;}
   .exc-cell-code{color:var(--text-head2);font-weight:600;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;}
   .exc-primary-cell{flex-direction:column;align-items:flex-start!important;gap:3px;min-width:0;}
+  .exc-area-cell{flex-direction:column;align-items:flex-start!important;gap:3px;}
+  .exc-area-cell .exc-primary-main{color:var(--text-body2);font-weight:500;}
   .exc-primary-main{color:var(--text-head2);font-weight:650;line-height:1.25;overflow-wrap:anywhere;}
   .exc-primary-sub{color:var(--blue-light);font-size:11px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;line-height:1.25;}
   .exc-cell-issue{flex-direction:column;align-items:flex-start;gap:2px;}
@@ -353,10 +356,12 @@
   #panel-exceptions .exc-header-row > div{padding:8px 10px;font-size:9.5px;}
   #panel-exceptions .exc-data-row > div{padding:9px 10px;font-size:11.5px;}
 
-  .merch-report-callout{display:flex;justify-content:space-between;align-items:center;gap:16px;background:linear-gradient(135deg,rgba(236,109,37,.13),rgba(8,29,56,.84));border:1px solid rgba(236,109,37,.38);border-radius:8px;padding:14px 16px;margin:16px 0 4px;}
-  .merch-report-callout h3{margin:1px 0 4px;color:var(--text-head);font-size:14px;font-weight:600;}
+  .merch-report-callout{display:flex;align-items:center;gap:8px;margin:-8px 0 12px;color:var(--blue-light);font-size:11.5px;}
+  .merch-report-callout h3{display:none;}
   .merch-report-callout p{margin:0;color:var(--blue-light);font-size:11.5px;line-height:1.45;}
   .merch-report-tag{color:var(--orange-soft);font-size:10px;font-weight:700;text-transform:uppercase;}
+  .merch-export-btn{background:var(--orange);border:1px solid var(--orange);color:#1a1005;padding:8px 13px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;}
+  .merch-export-btn:hover{filter:brightness(1.08);}
 
   @media (max-width:1000px){
     #panel-exceptions .processing-summary-bar{grid-template-columns:repeat(3,minmax(0,1fr));}
@@ -519,7 +524,7 @@
     </div>
 
     <h2>Upload Your GeoRep Exports</h2>
-    <p class="hint">These must be the raw exports from Geo — User List, Locations Export, Current Schedules Report — plus your Previous Meridian Master, used to carry over legacy STORE CODE values by matching on Meridian Store Code. Stores with no match in the previous master are flagged as an exception needing a new code assigned.</p>
+    <p class="hint">These must be the raw exports from Geo — User List, Locations Export, Current Schedules Report — plus your Previous Meridian Master, used to carry over retailer STORE CODE values by matching on Meridian Store Code. Current MER store codes with no previous-master retailer STORE CODE are flagged for review.</p>
     <div class="upload-grid">
       <div class="upload-slot" id="slot-users">
         <div class="slot-title">User List</div>
@@ -646,15 +651,14 @@
       <div class="panel-heading-actions">
         <button class="ghost-btn" onclick="goToStep(2)">Back to exceptions</button>
         <button class="ghost-btn" onclick="goToDashboard()">View dashboard</button>
+        <button class="merch-export-btn" onclick="exportMerchHoursStandalone()">Export merch hours</button>
       </div>
     </div>
     <div class="merch-report-callout">
       <div>
         <div class="merch-report-tag">Standalone operations report</div>
-        <h3>Merchandiser Hours Report</h3>
         <p>Export the merchandiser hours file on its own, in the required operations format.</p>
       </div>
-      <button class="primary-btn" onclick="exportMerchHoursStandalone()">Export Merchandiser Hours</button>
     </div>
     <div class="warn-banner step-hidden" id="unresolvedWarning"></div>
     <div class="master-tabs">
@@ -1175,7 +1179,7 @@ function processFilesInner(){
       if(!legacyStoreCodeLookup.has(scode)){
         const st = storeLookup.get(scode) || {};
         other.push({cat:'New store - not in previous Meridian Master',
-          detail:`Store ${scode} (${st.customerName||'unknown'}) has no legacy STORE CODE in the previous master — needs a new code assigned`,
+          detail:`Store ${scode} (${st.customerName||'unknown'}) has a MER code, but no retailer STORE CODE could be carried over from the previous Meridian Master`,
           region: st.region||'', banner: st.banner||''});
       }
     });
@@ -1219,7 +1223,9 @@ function processFilesInner(){
     if(a===null || b===null || b<=a){
       const u = userLookup.get(ucode); const st = storeLookup.get(scode);
       const reason = (a===null||b===null) ? 'missing or unparseable time' : (b===a ? 'zero duration' : 'end time before start time');
-      other.push({cat:'Invalid visit duration', detail:`${u?u.fullName:ucode} at store ${scode} — Start ${s(start)||'(blank)'}, End ${s(end)||'(blank)'} — ${reason}`,
+      other.push({cat:'Invalid visit duration',
+        userCode:ucode, userName:u?u.fullName:'', storeCode:scode, storeName:st?(st.customerName||''):'',
+        detail:`${u?u.fullName:ucode} at store ${scode} — Start ${s(start)||'(blank)'}, End ${s(end)||'(blank)'} — ${reason}`,
         region: st?(st.region||''):'', banner: st?(st.banner||''):''});
     }
   });
@@ -1294,7 +1300,11 @@ function processFilesInner(){
           if(flaggedOverlapPairs.has(pairKey)) continue;
           flaggedOverlapPairs.add(pairKey);
           const u = userLookup.get(ucode);
-          other.push({cat:'Overlapping visits', detail:`${u?u.fullName:ucode}: ${a.scode} (${visits[i].start}-${visits[i].end}) overlaps ${b.scode} (${visits[j].start}-${visits[j].end})`, region:'', banner:''});
+          const st = storeLookup.get(a.scode) || storeLookup.get(b.scode);
+          other.push({cat:'Overlapping visits',
+            userCode:ucode, userName:u?u.fullName:'', storeCode:a.scode, storeName:st?(st.customerName||''):'',
+            detail:`${u?u.fullName:ucode}: ${a.scode} (${visits[i].start}-${visits[i].end}) overlaps ${b.scode} (${visits[j].start}-${visits[j].end})`,
+            region: st?(st.region||''):'', banner: st?(st.banner||''):''});
         }
       }
     }
@@ -1329,9 +1339,15 @@ function processFilesInner(){
     const vals = [...weekMap.values()];
     const avgActual = vals.reduce((a,b)=>a+b,0)/vals.length;
     if(avgActual > ch*1.25){
-      other.push({cat:'Merchandiser contracted-hours check', detail:`${u.fullName} (${ucode}) contracted for ${ch}h/week, averaging ${avgActual.toFixed(1)}h — over-scheduled`, region:'', banner:''});
+      other.push({cat:'Merchandiser contracted-hours check',
+        userCode:ucode, userName:u.fullName,
+        detail:`${u.fullName} (${ucode}) contracted for ${ch}h/week, averaging ${avgActual.toFixed(1)}h — over-scheduled`,
+        region:u.assignedRegions||'', banner:''});
     } else if(avgActual < ch*0.6){
-      other.push({cat:'Merchandiser contracted-hours check', detail:`${u.fullName} (${ucode}) contracted for ${ch}h/week, averaging ${avgActual.toFixed(1)}h — under-scheduled`, region:'', banner:''});
+      other.push({cat:'Merchandiser contracted-hours check',
+        userCode:ucode, userName:u.fullName,
+        detail:`${u.fullName} (${ucode}) contracted for ${ch}h/week, averaging ${avgActual.toFixed(1)}h — under-scheduled`,
+        region:u.assignedRegions||'', banner:''});
     }
   });
 
@@ -1445,7 +1461,9 @@ function processFilesInner(){
   agg.forEach((data)=>{
     if(data.days.size===0){
       const u = userLookup.get(data.ucode); const st = storeLookup.get(data.scode);
-      other.push({cat:'No call days assigned', detail:`${u?u.fullName:data.ucode} at store ${data.scode}${st?' ('+st.customerName+')':''} has a schedule entry but no day of week set`,
+      other.push({cat:'No call days assigned',
+        userCode:data.ucode, userName:u?u.fullName:'', storeCode:data.scode, storeName:st?(st.customerName||''):'',
+        detail:`${u?u.fullName:data.ucode} at store ${data.scode}${st?' ('+st.customerName+')':''} has a schedule entry but no day of week set`,
         region: st?(st.region||''):'', banner: st?(st.banner||''):''});
     }
   });
@@ -1917,7 +1935,7 @@ const SIDEBAR_LABELS = {
   'Merchandiser contracted-hours check': 'Merch hours check',
   'Region mismatch between user and store': 'Region mismatch',
   'Duplicate store code with conflicting details': 'Duplicate store code',
-  'New store - not in previous Meridian Master': 'New store code',
+  'New store - not in previous Meridian Master': 'Missing retailer store code',
   'Active user with no schedule': 'Active user, no visits',
   'Inactive user still scheduled': 'Inactive user scheduled',
   'Inactive store still scheduled': 'Inactive store scheduled',
@@ -1978,7 +1996,7 @@ const CATEGORY_META = {
   'Coverage gap - rep, no merchandiser': {severity:'warning', entityType:'store', insight:'These stores have a rep assigned but no merchandiser. Confirm this is intentional for the store type.', action:'Add a merchandiser, or confirm rep-only coverage is correct for this store.'},
   'Coverage gap - merchandiser, no rep': {severity:'warning', entityType:'store', insight:'These stores have a merchandiser assigned but no rep. Confirm this is intentional for the store type.', action:'Add a rep, or confirm merchandiser-only coverage is correct for this store.'},
   'Coverage gap - no coverage at all': {label:'Active Stores with No Scheduled Visits', severity:'critical', entityType:'store', insight:'These stores are active in the master but have no scheduled visits in the current call cycle. Review whether the store should be scheduled, deactivated, or removed from coverage.', action:'Add a schedule, deactivate the store, or confirm removal.'},
-  'New store - not in previous Meridian Master': {severity:'info', entityType:'store', insight:'These stores do not appear in the previous Meridian Master and need a new store code assigned.', action:'Assign a new Meridian store code and confirm store details.'},
+  'New store - not in previous Meridian Master': {label:'Missing retailer store code', severity:'info', entityType:'store', insight:'These stores have a MER store code, but no retailer STORE CODE could be carried over from the previous Meridian Master.', action:'Confirm the retailer STORE CODE, or map it to the correct previous-master store record.'},
   'Multiple schedule entries - same store, same day': {severity:'warning', entityType:'user', insight:'These rows show more than one schedule entry for the same store on the same day, which can inflate visit counts.', action:'Confirm whether both entries are intentional, or remove the duplicate.'},
   'Invalid visit duration': {severity:'warning', entityType:'user', insight:'These schedule rows have a missing, zero, or otherwise invalid start/end time.', action:'Correct the start and end time in the Schedules export.'},
   'Rep/merchandiser overloaded on a day': {severity:'warning', entityType:'user', insight:'These reps or merchandisers are scheduled across an unusually high number of distinct stores on a single day.', action:'Review the workload and rebalance if needed.'},
@@ -2018,16 +2036,26 @@ function parseEntity(detail){
   if(m) return {code:m[1], name:''};
   return {code:'', name:''};
 }
+function parseLeadingEntity(detail){
+  const m = detail.match(/^"?([^"(]+?)"?\s*\(([A-Za-z0-9\-\/]+)\)/);
+  return m ? {code:m[2], name:m[1].trim()} : {code:'', name:''};
+}
 function hasSchedulePairFields(e){
-  return !!(e && (e.userCode || e.userName || e.storeCode || e.storeName));
+  return !!(e && (e.storeCode || e.storeName));
 }
 function isSchedulePairCategory(cat){
   return cat === 'Multiple schedule entries - same store, same day'
     || cat === 'Duplicate schedule row'
-    || cat === 'Region mismatch between user and store';
+    || cat === 'Region mismatch between user and store'
+    || cat === 'Overlapping visits'
+    || cat === 'Invalid visit duration'
+    || cat === 'No call days assigned';
 }
 function parseStoreCodeFromDetail(detail){
-  const m = detail.match(/\bat store\s+([A-Za-z0-9\-\/]+)/i) || detail.match(/\(([A-Za-z]{2,}\d+)\)/);
+  const m = detail.match(/\bat store\s+([A-Za-z0-9\-\/]+)/i)
+    || detail.match(/\bat\s+.*?\(([A-Za-z]{2,}\d+)\)/i)
+    || detail.match(/:\s*([A-Za-z]{2,}\d+)/)
+    || detail.match(/\(([A-Za-z]{2,}\d+)\)/);
   return m ? m[1] : '';
 }
 function parseRegionMismatchUserName(detail){
@@ -2036,6 +2064,14 @@ function parseRegionMismatchUserName(detail){
 }
 function parseWorkloadUserName(detail){
   const m = detail.match(/^(.+?)\s+(?:has a day with|ranges from)\b/i);
+  return m ? m[1].replace(/^"+|"+$/g,'').trim() : '';
+}
+function parseColonUserName(detail){
+  const m = detail.match(/^(.+?):\s+/);
+  return m ? m[1].replace(/^"+|"+$/g,'').trim() : '';
+}
+function parseAtStoreUserName(detail){
+  const m = detail.match(/^(.+?)\s+at store\b/i);
   return m ? m[1].replace(/^"+|"+$/g,'').trim() : '';
 }
 function findUserCodeByName(name){
@@ -2048,14 +2084,16 @@ function findUserCodeByName(name){
 }
 function displayEntity(e, meta){
   const parsed = parseEntity(e.detail);
+  const leading = parseLeadingEntity(e.detail);
   if(meta.entityType === 'store'){
     return {code:e.storeCode || parsed.code, name:e.storeName || parsed.name};
   }
   if(meta.entityType === 'user'){
     const workloadName = (e.cat === 'Rep/merchandiser overloaded on a day' || e.cat === 'Rep/merchandiser under-utilised on a day')
       ? parseWorkloadUserName(e.detail) : '';
-    const fallbackName = workloadName || parsed.name;
-    return {code:e.userCode || parsed.code || findUserCodeByName(fallbackName), name:e.userName || fallbackName};
+    const fallbackName = workloadName || parseRegionMismatchUserName(e.detail) || parseColonUserName(e.detail) || leading.name || parseAtStoreUserName(e.detail) || parsed.name;
+    const parsedUserCode = leading.code || (!/\bat store\b/i.test(e.detail) ? parsed.code : '');
+    return {code:e.userCode || parsedUserCode || findUserCodeByName(fallbackName), name:e.userName || fallbackName};
   }
   return {code:e.code || parsed.code, name:e.name || parsed.name};
 }
@@ -2066,7 +2104,11 @@ function schedulePairDisplay(e, meta){
   const storeCode = e.storeCode || parseStoreCodeFromDetail(e.detail);
   const user = state.userLookup && userCode ? state.userLookup.get(userCode) : null;
   const store = state.storeLookup && storeCode ? state.storeLookup.get(storeCode) : null;
-  const isScheduleRow = e.cat === 'Multiple schedule entries - same store, same day' || e.cat === 'Duplicate schedule row';
+  const isScheduleRow = e.cat === 'Multiple schedule entries - same store, same day'
+    || e.cat === 'Duplicate schedule row'
+    || e.cat === 'Overlapping visits'
+    || e.cat === 'Invalid visit duration'
+    || e.cat === 'No call days assigned';
   return {
     code:userCode,
     name:e.userName || (user?user.fullName:'') || regionMismatchName || person.name || (isScheduleRow && userCode ? 'Not found in User List' : ''),
@@ -2082,11 +2124,42 @@ function displayRegion(e, meta, code){
   }
   return '';
 }
+function displayScheduleRegion(e, meta, userCode, storeCode){
+  if(e.region) return e.region;
+  if(storeCode && state.storeLookup){
+    const store = state.storeLookup.get(storeCode);
+    if(store && store.region) return store.region;
+  }
+  return displayRegion(e, meta, userCode);
+}
+function displayBanner(e, storeCode){
+  if(e.banner) return e.banner;
+  if(storeCode && state.storeLookup){
+    const store = state.storeLookup.get(storeCode);
+    return store ? (store.banner || '') : '';
+  }
+  return '';
+}
+function exceptionDetail(e){
+  if(e.cat === 'New store - not in previous Meridian Master'){
+    const parsed = parseEntity(e.detail);
+    if(parsed.code){
+      return `Store ${parsed.code} (${parsed.name || 'unknown'}) has a MER code, but no retailer STORE CODE could be carried over from the previous Meridian Master`;
+    }
+  }
+  return e.detail;
+}
 function scheduleIssueDetail(e){
   if(e.cat === 'Multiple schedule entries - same store, same day' || e.cat === 'Duplicate schedule row'){
     return e.detail
       .replace(/^.*?\([A-Za-z0-9\-\/]+\)\s+at\s+.*?\([A-Za-z]{2,}\d+\),\s*/i, '')
       .replace(/^User\s+[A-Za-z0-9\-\/]+\s+at\s+store\s+[A-Za-z0-9\-\/]+,\s*/i, '');
+  }
+  if(e.cat === 'Overlapping visits'){
+    return e.detail.replace(/^.+?:\s*/, '');
+  }
+  if(e.cat === 'Invalid visit duration' || e.cat === 'No call days assigned'){
+    return e.detail.replace(/^.*?\s+at store\s+[A-Za-z0-9\-\/]+(?:\s*\([^)]+\))?\s*/i, '');
   }
   return e.detail;
 }
@@ -2120,11 +2193,21 @@ function exportCurrentCategory(){
     const usesSchedulePair = isSchedulePairCategory(cat) || hasSchedulePairFields(e);
     const display = usesSchedulePair ? schedulePairDisplay(e, meta) : displayEntity(e, meta);
     const {code, name} = display;
-    const row = { Severity: severityLabel(meta.severity), Code: code, Name: name, Region: displayRegion(e, meta, code), Banner: e.banner, Issue: categoryLabel(cat, meta), Detail: e.detail, 'Suggested Action': meta.action };
+    const storeCode = display.storeCode || '';
+    const row = {
+      Severity: severityLabel(meta.severity),
+      Code: code,
+      Name: name,
+      Region: usesSchedulePair ? displayScheduleRegion(e, meta, code, storeCode) : displayRegion(e, meta, code),
+      Banner: usesSchedulePair ? displayBanner(e, storeCode) : (e.banner || ''),
+      Issue: categoryLabel(cat, meta),
+      Detail: exceptionDetail(e),
+      'Suggested Action': meta.action
+    };
     if(usesSchedulePair){
       row['User Code'] = code;
       row['User Name'] = name;
-      row['MER Store Code'] = display.storeCode || '';
+      row['MER Store Code'] = storeCode;
       row['Store Name'] = display.storeName || '';
     }
     return row;
@@ -2183,18 +2266,27 @@ function renderOtherCategory(){
 
   el('excHeaderRow').classList.toggle('schedule-pair-grid', showsSchedulePair);
   el('excHeaderRow').innerHTML = showsSchedulePair
-    ? `<div>Severity</div><div>Person</div><div>Store</div><div>Region</div><div>Banner</div><div>Issue</div><div>Suggested Action</div>`
-    : `<div>Severity</div><div>${esc(codeHeader)}</div><div>${esc(nameHeader)}</div><div>Region</div><div>Banner</div><div>Issue</div><div>Suggested Action</div>`;
+    ? `<div>Severity</div><div>Person</div><div>Store</div><div>Area</div><div>Issue</div><div>Action</div>`
+    : `<div>Severity</div><div>${esc(codeHeader)}</div><div>${esc(nameHeader)}</div><div>Area</div><div>Issue</div><div>Action</div>`;
 
   const q = (state.excSearch||'').trim().toLowerCase();
   let rows = filtered.map(e=>{
     const display = showsSchedulePair ? schedulePairDisplay(e, meta) : displayEntity(e, meta);
-    return {e, code:display.code, name:display.name, region:displayRegion(e, meta, display.code), storeCode:display.storeCode||'', storeName:display.storeName||''};
+    const storeCode = display.storeCode || '';
+    return {
+      e,
+      code:display.code,
+      name:display.name,
+      region:showsSchedulePair ? displayScheduleRegion(e, meta, display.code, storeCode) : displayRegion(e, meta, display.code),
+      banner:showsSchedulePair ? displayBanner(e, storeCode) : (e.banner || ''),
+      storeCode,
+      storeName:display.storeName||''
+    };
   });
   if(q){
     rows = rows.filter(r => (r.code||'').toLowerCase().includes(q) || (r.name||'').toLowerCase().includes(q)
       || (r.storeCode||'').toLowerCase().includes(q) || (r.storeName||'').toLowerCase().includes(q)
-      || (r.region||'').toLowerCase().includes(q) || (r.e.banner||'').toLowerCase().includes(q) || r.e.detail.toLowerCase().includes(q));
+      || (r.region||'').toLowerCase().includes(q) || (r.banner||'').toLowerCase().includes(q) || r.e.detail.toLowerCase().includes(q));
   }
 
   const list = el('otherCatList');
@@ -2208,36 +2300,40 @@ function renderOtherCategory(){
   const visible = showAll ? rows : rows.slice(0, LIMIT);
   el('excResultCount').textContent = showAll ? `Showing ${rows.length} of ${rows.length}` : `Showing ${LIMIT} of ${rows.length}`;
 
-  const rowsHtml = visible.map(({e, code, name, region, storeCode, storeName})=> showsSchedulePair ? `
+  const rowsHtml = visible.map(({e, code, name, region, banner, storeCode, storeName})=> showsSchedulePair ? `
     <div class="exc-row-grid schedule-pair-grid exc-data-row">
       <div data-label="Severity"><span class="severity-pill ${meta.severity}">${esc(severityLabel(meta.severity))}</span></div>
       <div class="exc-primary-cell" data-label="Person">
-        <div class="exc-primary-main">${esc(name)||'\u2014'}</div>
-        <div class="exc-primary-sub">${esc(code)||'\u2014'}</div>
+        <div class="exc-primary-main">${esc(name)}</div>
+        <div class="exc-primary-sub">${esc(code)}</div>
       </div>
       <div class="exc-primary-cell" data-label="Store">
-        <div class="exc-primary-main">${esc(storeName)||'\u2014'}</div>
-        <div class="exc-primary-sub">${esc(storeCode)||'\u2014'}</div>
+        <div class="exc-primary-main">${esc(storeName)}</div>
+        <div class="exc-primary-sub">${esc(storeCode)}</div>
       </div>
-      <div data-label="Region">${esc(region)||'\u2014'}</div>
-      <div data-label="Banner">${esc(e.banner)||'\u2014'}</div>
+      <div class="exc-area-cell" data-label="Area">
+        <div class="exc-primary-main">${esc(region)}</div>
+        <div class="exc-primary-sub">${esc(banner)}</div>
+      </div>
       <div class="exc-cell-issue" data-label="Issue">
         <div class="exc-issue-main">${esc(label)}</div>
         <div class="exc-issue-detail">${esc(scheduleIssueDetail(e))}</div>
       </div>
-      <div data-label="Suggested Action">${esc(meta.action)}</div>
+      <div data-label="Action">${esc(meta.action)}</div>
     </div>` : `
     <div class="exc-row-grid exc-data-row">
       <div data-label="Severity"><span class="severity-pill ${meta.severity}">${esc(severityLabel(meta.severity))}</span></div>
-      <div class="exc-cell-code" data-label="${esc(codeHeader)}">${esc(code)||'\u2014'}</div>
-      <div data-label="${esc(nameHeader)}">${esc(name)||'\u2014'}</div>
-      <div data-label="Region">${esc(region)||'\u2014'}</div>
-      <div data-label="Banner">${esc(e.banner)||'\u2014'}</div>
+      <div class="exc-cell-code" data-label="${esc(codeHeader)}">${esc(code)}</div>
+      <div data-label="${esc(nameHeader)}">${esc(name)}</div>
+      <div class="exc-area-cell" data-label="Area">
+        <div class="exc-primary-main">${esc(region)}</div>
+        <div class="exc-primary-sub">${esc(banner)}</div>
+      </div>
       <div class="exc-cell-issue" data-label="Issue">
         <div class="exc-issue-main">${esc(label)}</div>
-        <div class="exc-issue-detail">${esc(e.detail)}</div>
+        <div class="exc-issue-detail">${esc(exceptionDetail(e))}</div>
       </div>
-      <div data-label="Suggested Action">${esc(meta.action)}</div>
+      <div data-label="Action">${esc(meta.action)}</div>
     </div>`).join('');
   const moreHtml = showAll ? '' : `<div class="exc-showmore-row">Showing first ${LIMIT} of ${rows.length} \u2014 <button onclick="toggleShowAllExc()">Show all</button></div>`;
   list.innerHTML = rowsHtml + moreHtml;
