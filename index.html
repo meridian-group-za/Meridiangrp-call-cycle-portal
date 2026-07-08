@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <title>Call Cycle Control Centre</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://alcdn.msauth.net/browser/3.7.1/js/msal-browser.min.js"></script>
+<script src="https://alcdn.msauth.net/browser/2.35.0/js/msal-browser.min.js"></script>
 <style>
   :root{
     --bg-deep:#081b34; --bg-panel1:#123a68; --bg-panel2:#0b2649; --bg-panel3:#081b34;
@@ -614,7 +614,9 @@ async function initAuth(){
   }
   try{
     msalInstance = new msal.PublicClientApplication(msalConfig);
-    await msalInstance.initialize();
+    if (typeof msalInstance.initialize === 'function') {
+      await msalInstance.initialize();
+    }
     const result = await msalInstance.handleRedirectPromise();
     const account = (result && result.account) || msalInstance.getAllAccounts()[0];
     if(account){
@@ -2080,26 +2082,7 @@ function resetAll(){
   goToStep(1);
 }
 
-window.addEventListener("DOMContentLoaded", function () {
-  if (typeof window.msal === "undefined") {
-    console.error("MSAL failed to load. Check the MSAL script tag or internet access.");
-
-    const authStatus = document.getElementById("authStatus");
-    if (authStatus) {
-      authStatus.textContent = "Microsoft sign-in failed to load. Please refresh or check your internet connection.";
-      authStatus.classList.add("err");
-    }
-
-    const signInBtn = document.getElementById("authSignInBtn");
-    if (signInBtn) {
-      signInBtn.disabled = true;
-    }
-
-    return;
-  }
-
-  initAuth();
-});
+initAuth();
 </script>
 </body>
 </html>
