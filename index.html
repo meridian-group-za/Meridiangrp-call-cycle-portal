@@ -124,12 +124,13 @@
   .venn-chip.reponly .vnum{color:var(--orange-soft);}
   .venn-chip.merchonly .vnum{color:var(--amber);}
 
+  #panel-dashboard > h2,#panel-dashboard > p.hint,#panel-dashboard > .panel-heading-actions{display:none;}
   #panel-dashboard .dashboard-top{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid rgba(157,196,236,.14);}
   #panel-dashboard .dashboard-top h2{margin:0 0 5px;}
   #panel-dashboard .dashboard-sub{margin:0;color:var(--blue-light);font-size:12.5px;line-height:1.45;}
   #panel-dashboard .dashboard-actions{display:flex;gap:8px;flex-wrap:wrap;}
   #panel-dashboard .dashboard-actions .ghost-btn{padding:8px 13px;font-size:12px;border-radius:8px;}
-  #panel-dashboard .dashboard-meta{font-size:11.5px;color:var(--blue-light);margin-bottom:12px;}
+  #panel-dashboard .dashboard-meta,#panel-dashboard #dashLastUpdated{font-size:11.5px!important;color:var(--blue-light)!important;margin-bottom:12px!important;}
   #panel-dashboard .dashboard-filter-panel{border:1px solid rgba(157,196,236,.14);background:rgba(8,29,56,.48);border-radius:9px;padding:12px;margin-bottom:14px;}
   #panel-dashboard .dashboard-filter-row{display:grid;grid-template-columns:repeat(3,minmax(150px,1fr)) minmax(220px,1.4fr) auto;gap:10px;align-items:end;}
   #panel-dashboard .dash-filter-field{display:flex;flex-direction:column;gap:5px;min-width:0;}
@@ -138,11 +139,11 @@
   #panel-dashboard .dash-filter-field input::placeholder{color:rgba(157,196,236,.62);}
   #panel-dashboard .dashboard-filter-panel .ghost-btn{height:36px;padding:8px 12px;font-size:12px;border-radius:7px;white-space:nowrap;}
   #panel-dashboard .dashboard-filter-summary{margin-top:9px;color:var(--blue-light);font-size:11.5px;}
-  #panel-dashboard .dashboard-kpi-row{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:1px;margin-bottom:14px;border:1px solid rgba(157,196,236,.14);border-radius:8px;overflow:hidden;background:rgba(157,196,236,.10);}
-  #panel-dashboard .dashboard-kpi-row .kpi-card{border:0;border-radius:0;background:rgba(8,29,56,.86);padding:12px 14px;}
-  #panel-dashboard .dashboard-kpi-row .kpi-card::before{width:2px;opacity:.65;}
-  #panel-dashboard .dashboard-kpi-row .kpi-card .kpi-num{font-size:21px;}
-  #panel-dashboard .dashboard-kpi-row .kpi-card .kpi-lbl{font-size:9.5px;margin-top:4px;}
+  #panel-dashboard .dashboard-kpi-row,#panel-dashboard #dashExecutiveKpis{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:1px;margin-bottom:14px;border:1px solid rgba(157,196,236,.14);border-radius:8px;overflow:hidden;background:rgba(157,196,236,.10);}
+  #panel-dashboard .dashboard-kpi-row .kpi-card,#panel-dashboard #dashExecutiveKpis .kpi-card{border:0;border-radius:0;background:rgba(8,29,56,.86);padding:12px 14px;}
+  #panel-dashboard .dashboard-kpi-row .kpi-card::before,#panel-dashboard #dashExecutiveKpis .kpi-card::before{width:2px;opacity:.65;}
+  #panel-dashboard .dashboard-kpi-row .kpi-card .kpi-num,#panel-dashboard #dashExecutiveKpis .kpi-card .kpi-num{font-size:21px;}
+  #panel-dashboard .dashboard-kpi-row .kpi-card .kpi-lbl,#panel-dashboard #dashExecutiveKpis .kpi-card .kpi-lbl{font-size:9.5px;margin-top:4px;}
   #panel-dashboard .dashboard-focus-row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:10px 0 12px;}
   #panel-dashboard .dashboard-focus-row .section-title{margin:0;}
   #panel-dashboard .master-tabs{margin-bottom:0;}
@@ -647,6 +648,14 @@
         <button class="ghost-btn" onclick="goToDashboard()">View dashboard</button>
       </div>
     </div>
+    <div class="merch-report-callout">
+      <div>
+        <div class="merch-report-tag">Standalone operations report</div>
+        <h3>Merchandiser Hours Report</h3>
+        <p>Export the merchandiser hours file on its own, in the required operations format.</p>
+      </div>
+      <button class="primary-btn" onclick="exportMerchHoursStandalone()">Export Merchandiser Hours</button>
+    </div>
     <div class="warn-banner step-hidden" id="unresolvedWarning"></div>
     <div class="master-tabs">
       <div class="master-tab-btn active" data-mf="all" onclick="setMasterFilter('all')">All resources</div>
@@ -656,14 +665,6 @@
     <div class="stat-row" id="statMasters"></div>
     <input type="text" class="search-box" id="masterSearch" placeholder="Search by store or name..." oninput="renderMasterTable()">
     <div class="table-wrap"><table class="master-tbl" id="masterTable"></table></div>
-    <div class="merch-report-callout">
-      <div>
-        <div class="merch-report-tag">Standalone operations report</div>
-        <h3>Merchandiser Hours Report</h3>
-        <p>Export the merchandiser hours file on its own, in the required operations format.</p>
-      </div>
-      <button class="primary-btn" onclick="exportMerchHoursStandalone()">Export Merchandiser Hours</button>
-    </div>
     <div class="btn-row" style="align-items:flex-start;">
       <button class="ghost-btn" onclick="goToStep(2)">← Back</button>
       <button class="ghost-btn" onclick="goToDashboard()">View dashboard →</button>
@@ -676,6 +677,16 @@
 
   <!-- STEP 4: DASHBOARD -->
   <div class="panel step-hidden" id="panel-dashboard">
+    <div class="dashboard-top">
+      <div>
+        <h2>Management Dashboard</h2>
+        <p class="dashboard-sub">Operational view of active master coverage, conflicts and call-cycle composition.</p>
+      </div>
+      <div class="dashboard-actions">
+        <button class="ghost-btn" onclick="goToMasters()">Back to master</button>
+        <button class="ghost-btn" onclick="goToStep(1)">Go to upload</button>
+      </div>
+    </div>
     <h2>Management Dashboard</h2>
     <p class="hint">Shows your last saved run automatically — no need to re-upload. Updates the moment you resolve a new conflict.</p>
     <div class="panel-heading-actions" style="margin:10px 0 14px;">
@@ -687,6 +698,16 @@
     <div id="dashboardEmptyState" class="empty-msg step-hidden">No saved run yet — upload and process your files first.</div>
 
     <div id="dashboardContent">
+    <div class="dashboard-filter-panel">
+      <div class="dashboard-filter-row">
+        <label class="dash-filter-field"><span>Region</span><select id="dashRegionFilter" onchange="onDashboardFilterChange()"><option value="">All regions</option></select></label>
+        <label class="dash-filter-field"><span>Banner</span><select id="dashBannerFilter" onchange="onDashboardFilterChange()"><option value="">All banners</option></select></label>
+        <label class="dash-filter-field"><span>Coverage</span><select id="dashCoverageFilter" onchange="onDashboardFilterChange()"><option value="">All coverage</option><option value="both">Rep and merch</option><option value="repOnly">Rep only</option><option value="merchOnly">Merch only</option></select></label>
+        <label class="dash-filter-field"><span>Search</span><input id="dashSearch" type="text" placeholder="Store, resource, code..." oninput="onDashboardFilterChange()"></label>
+        <button class="ghost-btn" onclick="clearDashboardFilters()">Clear</button>
+      </div>
+      <div id="dashFilterSummary" class="dashboard-filter-summary"></div>
+    </div>
     <h2 class="section-title">Executive Summary</h2>
     <div class="kpi-grid" id="dashExecutiveKpis"></div>
 
@@ -1567,21 +1588,10 @@ async function saveDashboardSnapshot(){
 }
 
 function summarizeMaster(rows){
-  return {
-    totalRows: rows.length,
-    distinctResources: new Set(rows.map(r=>r['RESOURCE EMP ID'])).size,
-    storeCount: new Set(rows.map(r=>r['STORE CODE'])).size,
-    regionCounts: countBy(rows, 'REGION'),
-    bannerCounts: countBy(rows, 'BANNER'),
-    freqCounts: countDistinctBy(rows, 'CALLING FREQUENCY', 'RESOURCE EMP ID'),
-    typeCounts: countDistinctBy(rows, 'RESOURCE TYPE', 'RESOURCE EMP ID')
-  };
+  return summarizeDashboardRows(toDashboardRows(rows));
 }
 function computeOverlap(repRows, merchRows){
-  const repStores = new Set(repRows.map(r=>r['STORE CODE']));
-  const merchStores = new Set(merchRows.map(r=>r['STORE CODE']));
-  const both = [...repStores].filter(x=>merchStores.has(x)).length;
-  return { both, repOnly: repStores.size-both, merchOnly: merchStores.size-both };
+  return computeOverlapFromDashboardRows(toDashboardRows(repRows), toDashboardRows(merchRows));
 }
 
 async function loadAndRenderDashboard(){
@@ -1610,6 +1620,126 @@ function setDashboardFilter(f){
 
 function renderBarListFromPairs(containerId, pairs, max){
   renderBarList(containerId, pairs || [], max);
+}
+
+function dashboardStoreKey(row){
+  return s(row.storeCode || row['STORE CODE']) || s(row.geoStoreCode || row['GEO REP STORE CODE']);
+}
+
+function toDashboardRows(rows){
+  return rows.map(r=>({
+    storeCode: s(r['STORE CODE']) || s(r['GEO REP STORE CODE']),
+    geoStoreCode: s(r['GEO REP STORE CODE']),
+    storeName: s(r['STORE NAME']),
+    banner: s(r['BANNER']),
+    region: s(r['REGION']),
+    resourceId: s(r['RESOURCE EMP ID']),
+    resourceName: s(r['RESOURCE NAME']),
+    resourceType: s(r['RESOURCE TYPE']),
+    frequency: s(r['CALLING FREQUENCY'])
+  }));
+}
+
+function countDashboardBy(rows, field){
+  const counts = {};
+  rows.forEach(r=>{
+    const v = s(r[field]) || '(blank)';
+    counts[v] = (counts[v]||0)+1;
+  });
+  return Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+}
+
+function countDashboardDistinctBy(rows, field, idField){
+  const seen = new Map();
+  rows.forEach(r=>{
+    const v = s(r[field]) || '(blank)';
+    const id = s(r[idField]);
+    if(!seen.has(v)) seen.set(v, new Set());
+    if(id) seen.get(v).add(id);
+  });
+  return [...seen.entries()].map(([k,v])=>[k,v.size]).sort((a,b)=>b[1]-a[1]);
+}
+
+function summarizeDashboardRows(rows){
+  return {
+    totalRows: rows.length,
+    distinctResources: new Set(rows.map(r=>r.resourceId).filter(Boolean)).size,
+    storeCount: new Set(rows.map(dashboardStoreKey).filter(Boolean)).size,
+    regionCounts: countDashboardBy(rows, 'region'),
+    bannerCounts: countDashboardBy(rows, 'banner'),
+    freqCounts: countDashboardDistinctBy(rows, 'frequency', 'resourceId'),
+    typeCounts: countDashboardDistinctBy(rows, 'resourceType', 'resourceId'),
+    rows
+  };
+}
+
+function computeOverlapFromDashboardRows(repRows, merchRows){
+  const repStores = new Set(repRows.map(dashboardStoreKey).filter(Boolean));
+  const merchStores = new Set(merchRows.map(dashboardStoreKey).filter(Boolean));
+  const both = [...repStores].filter(x=>merchStores.has(x)).length;
+  return { both, repOnly: repStores.size-both, merchOnly: merchStores.size-both };
+}
+
+function dashboardRowsFor(snap, key){
+  return (snap && snap[key] && Array.isArray(snap[key].rows)) ? snap[key].rows : null;
+}
+
+function dashboardFilterValues(){
+  return {
+    region: el('dashRegionFilter') ? el('dashRegionFilter').value : '',
+    banner: el('dashBannerFilter') ? el('dashBannerFilter').value : '',
+    coverage: el('dashCoverageFilter') ? el('dashCoverageFilter').value : '',
+    search: el('dashSearch') ? el('dashSearch').value.trim().toLowerCase() : ''
+  };
+}
+
+function dashboardCoverageSets(repRows, merchRows){
+  const repStores = new Set(repRows.map(dashboardStoreKey).filter(Boolean));
+  const merchStores = new Set(merchRows.map(dashboardStoreKey).filter(Boolean));
+  const both = new Set([...repStores].filter(x=>merchStores.has(x)));
+  const repOnly = new Set([...repStores].filter(x=>!merchStores.has(x)));
+  const merchOnly = new Set([...merchStores].filter(x=>!repStores.has(x)));
+  return {both, repOnly, merchOnly};
+}
+
+function applyDashboardFilters(rows, filters, coverageSets){
+  return rows.filter(r=>{
+    const storeKey = dashboardStoreKey(r);
+    if(filters.region && r.region !== filters.region) return false;
+    if(filters.banner && r.banner !== filters.banner) return false;
+    if(filters.coverage && coverageSets && !coverageSets[filters.coverage].has(storeKey)) return false;
+    if(filters.search){
+      const haystack = [r.storeCode,r.geoStoreCode,r.storeName,r.resourceId,r.resourceName,r.resourceType,r.frequency,r.region,r.banner].join(' ').toLowerCase();
+      if(!haystack.includes(filters.search)) return false;
+    }
+    return true;
+  });
+}
+
+function setSelectOptions(selectId, values, allLabel){
+  const sel = el(selectId);
+  if(!sel) return;
+  const previous = sel.value;
+  sel.innerHTML = `<option value="">${esc(allLabel)}</option>` + values.map(v=>`<option value="${esc(v)}">${esc(v)}</option>`).join('');
+  if(values.includes(previous)) sel.value = previous;
+}
+
+function populateDashboardFilters(snap){
+  const repRows = dashboardRowsFor(snap, 'rep') || [];
+  const merchRows = dashboardRowsFor(snap, 'merch') || [];
+  const allRows = repRows.concat(merchRows);
+  setSelectOptions('dashRegionFilter', [...new Set(allRows.map(r=>r.region).filter(Boolean))].sort(), 'All regions');
+  setSelectOptions('dashBannerFilter', [...new Set(allRows.map(r=>r.banner).filter(Boolean))].sort(), 'All banners');
+}
+
+function onDashboardFilterChange(){
+  renderDashboard();
+}
+
+function clearDashboardFilters(){
+  ['dashRegionFilter','dashBannerFilter','dashCoverageFilter'].forEach(id=>{ if(el(id)) el(id).value=''; });
+  if(el('dashSearch')) el('dashSearch').value = '';
+  renderDashboard();
 }
 
 function renderAuditTrail(){
@@ -1642,16 +1772,33 @@ function renderDashboard(){
   const d = new Date(snap.timestamp);
   el('dashLastUpdated').textContent = `Based on the run last updated ${d.toLocaleDateString()} ${d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}.`;
 
+  populateDashboardFilters(snap);
+  const repRowsRaw = dashboardRowsFor(snap, 'rep');
+  const merchRowsRaw = dashboardRowsFor(snap, 'merch');
+  const hasDashboardDetail = !!(repRowsRaw && merchRowsRaw);
+  const filters = dashboardFilterValues();
+  const coverageSets = hasDashboardDetail ? dashboardCoverageSets(repRowsRaw, merchRowsRaw) : null;
+  const repRows = hasDashboardDetail ? applyDashboardFilters(repRowsRaw, filters, coverageSets) : null;
+  const merchRows = hasDashboardDetail ? applyDashboardFilters(merchRowsRaw, filters, coverageSets) : null;
+  const repSummary = hasDashboardDetail ? summarizeDashboardRows(repRows) : snap.rep;
+  const merchSummary = hasDashboardDetail ? summarizeDashboardRows(merchRows) : snap.merch;
+  const overlap = hasDashboardDetail ? computeOverlapFromDashboardRows(repRows, merchRows) : snap.overlap;
+  const filteredStores = hasDashboardDetail ? (overlap.both + overlap.repOnly + overlap.merchOnly) : (snap.overlap.both + snap.overlap.repOnly + snap.overlap.merchOnly);
+  const allFilterText = hasDashboardDetail
+    ? `${filteredStores} active store(s) shown after filters - ${repSummary.totalRows} rep row(s), ${merchSummary.totalRows} merchandiser row(s).`
+    : 'Reprocess the files to enable dashboard filters on this saved run.';
+  if(el('dashFilterSummary')) el('dashFilterSummary').textContent = allFilterText;
+
   // Executive KPI grid
-  const totalStores = snap.overlap.both + snap.overlap.repOnly + snap.overlap.merchOnly;
-  const overlapPct = totalStores ? Math.round((snap.overlap.both/totalStores)*100) : 0;
+  const totalStores = overlap.both + overlap.repOnly + overlap.merchOnly;
+  const overlapPct = totalStores ? Math.round((overlap.both/totalStores)*100) : 0;
   const conflictTotal = snap.conflicts.pending + snap.conflicts.resolved;
   const readinessPct = conflictTotal===0 ? 100 : Math.round((snap.conflicts.resolved/conflictTotal)*100);
   const execCards = [
     {label:'Total Stores Covered', val: totalStores},
     {label:'Coverage Overlap', val: overlapPct+'%', cls: overlapPct>=70?'good':(overlapPct>=40?'warn':'bad')},
-    {label:'Stores With Rep Only', val: snap.overlap.repOnly},
-    {label:'Stores With Merchandiser Only', val: snap.overlap.merchOnly},
+    {label:'Stores With Rep Only', val: overlap.repOnly},
+    {label:'Stores With Merchandiser Only', val: overlap.merchOnly},
     {label:'Pending Conflicts', val: snap.conflicts.pending, cls: snap.conflicts.pending===0?'good':'warn'},
     {label:'Master Readiness', val: readinessPct+'%', cls: readinessPct===100?'good':(readinessPct>0?'warn':'bad')}
   ];
@@ -1661,7 +1808,7 @@ function renderDashboard(){
   renderAuditTrail();
 
   const filter = state.dashboardFilter || 'Rep';
-  const focus = filter==='Rep' ? snap.rep : snap.merch;
+  const focus = filter==='Rep' ? repSummary : merchSummary;
   const label = filter==='Rep' ? 'reps' : 'merchandisers';
 
   el('dashHeadline').innerHTML = `
@@ -1670,9 +1817,9 @@ function renderDashboard(){
     <div class="stat-card"><div class="num">${focus.totalRows}</div><div class="lbl">Total master rows</div></div>
     <div class="stat-card pending"><div class="num">${snap.conflicts.pending}</div><div class="lbl">Pending conflicts (rep only)</div></div>`;
 
-  el('vBoth').textContent = snap.overlap.both;
-  el('vRepOnly').textContent = snap.overlap.repOnly;
-  el('vMerchOnly').textContent = snap.overlap.merchOnly;
+  el('vBoth').textContent = overlap.both;
+  el('vRepOnly').textContent = overlap.repOnly;
+  el('vMerchOnly').textContent = overlap.merchOnly;
 
   el('dashRegionTitle').textContent = `${filter==='Rep'?'Rep':'Merchandiser'} stores by region`;
   el('dashBannerTitle').textContent = `${filter==='Rep'?'Rep':'Merchandiser'} stores by banner`;
