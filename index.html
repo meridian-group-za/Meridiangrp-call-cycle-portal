@@ -497,8 +497,8 @@
 
   <div class="stepper">
     <div class="step-pill" id="pill-1"><div class="step-num">1</div><div class="step-label"><b>Upload</b><span>GeoRep exports</span></div></div>
-    <div class="step-pill" id="pill-2"><div class="step-num">2</div><div class="step-label"><b>Exceptions</b><span>review & resolve</span></div></div>
-    <div class="step-pill" id="pill-3"><div class="step-num">3</div><div class="step-label"><b>Validated Master</b><span>view & export</span></div></div>
+    <div class="step-pill" id="pill-2" onclick="goToExceptionsStep()" style="cursor:pointer;"><div class="step-num">2</div><div class="step-label"><b>Exceptions</b><span>review & resolve</span></div></div>
+    <div class="step-pill" id="pill-3" onclick="goToMasters()" style="cursor:pointer;"><div class="step-num">3</div><div class="step-label"><b>Validated Master</b><span>view & export</span></div></div>
     <div class="step-pill" id="pill-4" onclick="goToDashboard()" style="cursor:pointer;"><div class="step-num">4</div><div class="step-label"><b>Dashboard</b><span>management view</span></div></div>
   </div>
 
@@ -574,6 +574,7 @@
             <h2 style="margin-bottom:2px;">Exceptions</h2>
             <p class="hint" style="margin-bottom:0;" id="excCategoryHint">Review data-quality exceptions before export. Rep conflicts stay visible as exceptions and are included in the master with a clear flag until resolved.</p>
           </div>
+          <button class="ghost-btn" onclick="refreshSharedRun()">Refresh</button>
           <button class="primary-btn" onclick="exportExceptions()">Export exceptions to Excel</button>
         </div>
 
@@ -828,6 +829,7 @@ function showApp(account){
   chip.innerHTML = `<span class="u-avatar">${esc(initialsOf(name))}</span><span>${esc(name)}</span><button onclick="signOut()">Sign out</button>`;
   goToStep(1);
   loadAndRenderDashboard();
+  loadSharedRunIfNeeded();
 }
 
 const el = id => document.getElementById(id);
@@ -1543,7 +1545,7 @@ function processFilesInner(){
   }
 
   renderExcSidebar(); populateExcFilterDropdowns(); renderExceptionsView();
-  saveState(); saveDashboardSnapshot();
+  saveState(); saveDashboardSnapshot(); saveRunSnapshot();
   goToStep(2);
 }
 
@@ -1582,6 +1584,10 @@ function goToStep(n){
   if(n===3) el('panel-masters').classList.remove('step-hidden');
   if(n===4) el('panel-dashboard').classList.remove('step-hidden');
 }
+function goToExceptionsStep(){
+  renderExcSidebar(); populateExcFilterDropdowns(); renderExceptionsView();
+  goToStep(2);
+}
 function goToMasters(){ renderMasterStats(); renderMasterTable(); goToStep(3); }
 function goToDashboard(){
   goToStep(4);
@@ -1618,27 +1624,162 @@ async function getSharePointSiteId(){
   cachedSharePointSiteId = data.id;
   return cachedSharePointSiteId;
 }
-async function saveSnapshotToSharePoint(snapshot){
+// Generic JSON file upload. Uses a simple PUT for anything comfortably under
+// Graph's 4MB simple-upload ceiling, and an upload session (chunked) for
+// anything larger, so this keeps working as the shared data grows.
+async function uploadJsonToSharePoint(filename, dataObj){
   const token = await getGraphToken();
   const siteId = await getSharePointSiteId();
-  const path = encodeURI(`${SHAREPOINT_FOLDER_PATH}/${SNAPSHOT_FILENAME}`);
-  const res = await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/drive/root:/${path}:/content`, {
-    method: 'PUT',
+  const path = encodeURI(`${SHAREPOINT_FOLDER_PATH}/${filename}`);
+  const json = JSON.stringify(dataObj);
+  const bytes = new TextEncoder().encode(json);
+  if(bytes.length < 3500000){
+    const res = await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/drive/root:/${path}:/content`, {
+      method: 'PUT',
+      headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: json
+    });
+    if(!res.ok) throw new Error(`Failed to save ${filename} to SharePoint (status ${res.status})`);
+    return;
+  }
+  // Large file: resumable upload session, in ~3.2MB chunks (must be a multiple of 320 KiB).
+  const sessionRes = await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/drive/root:/${path}:/createUploadSession`, {
+    method: 'POST',
     headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
-    body: JSON.stringify(snapshot)
+    body: JSON.stringify({ item: { '@microsoft.graph.conflictBehavior': 'replace' } })
   });
-  if(!res.ok) throw new Error('Failed to save snapshot to SharePoint (status '+res.status+')');
+  if(!sessionRes.ok) throw new Error(`Failed to start upload session for ${filename} (status ${sessionRes.status})`);
+  const { uploadUrl } = await sessionRes.json();
+  const chunkSize = 3276800;
+  let offset = 0;
+  const total = bytes.length;
+  while(offset < total){
+    const end = Math.min(offset + chunkSize, total);
+    const chunk = bytes.slice(offset, end);
+    const putRes = await fetch(uploadUrl, {
+      method: 'PUT',
+      headers: { 'Content-Length': String(chunk.length), 'Content-Range': `bytes ${offset}-${end-1}/${total}` },
+      body: chunk
+    });
+    if(!putRes.ok) throw new Error(`Chunk upload failed for ${filename} (status ${putRes.status})`);
+    offset = end;
+  }
 }
-async function loadSnapshotFromSharePoint(){
+async function downloadJsonFromSharePoint(filename){
   const token = await getGraphToken();
   const siteId = await getSharePointSiteId();
-  const path = encodeURI(`${SHAREPOINT_FOLDER_PATH}/${SNAPSHOT_FILENAME}`);
+  const path = encodeURI(`${SHAREPOINT_FOLDER_PATH}/${filename}`);
   const res = await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/drive/root:/${path}:/content`, {
     headers: { Authorization: 'Bearer ' + token }
   });
   if(res.status === 404) return null;
-  if(!res.ok) throw new Error('Failed to load snapshot from SharePoint (status '+res.status+')');
+  if(!res.ok) throw new Error(`Failed to load ${filename} from SharePoint (status ${res.status})`);
   return await res.json();
+}
+async function saveSnapshotToSharePoint(snapshot){ return uploadJsonToSharePoint(SNAPSHOT_FILENAME, snapshot); }
+async function loadSnapshotFromSharePoint(){ return downloadJsonFromSharePoint(SNAPSHOT_FILENAME); }
+
+// ============================================================
+// SHARED EXCEPTIONS & MASTER (full working state, for colleagues
+// who haven't uploaded anything themselves)
+// ============================================================
+const RUN_FILENAME = 'run-latest.json';
+
+function serializeUserLookupForShare(){
+  // Keep this small: only the users referenced by conflicts (candidates + resolvedUser).
+  const relevant = new Set();
+  state.conflicts.forEach(c=>{
+    (c.candidates||[]).forEach(cd=>relevant.add(cd.ucode));
+    if(c.resolvedUser) relevant.add(c.resolvedUser);
+  });
+  const out = {};
+  relevant.forEach(ucode=>{
+    const u = state.userLookup.get(ucode);
+    if(u) out[ucode] = { fullName:u.fullName, email:u.email, roleBucket:u.roleBucket, managerCode:u.managerCode, managerName:u.managerName, status:u.status };
+  });
+  return out;
+}
+function currentSignedInName(){
+  try{ return (msalInstance && msalInstance.getActiveAccount() && msalInstance.getActiveAccount().name) || 'Unknown'; }
+  catch(e){ return 'Unknown'; }
+}
+async function saveRunSnapshot(){
+  try{
+    const payload = {
+      timestamp: Date.now(),
+      processedBy: currentSignedInName(),
+      conflicts: state.conflicts,
+      otherExceptions: state.otherExceptions,
+      userLookup: serializeUserLookupForShare(),
+      rawMasterRowsRep: buildRawMasterRows('Rep'),
+      rawMasterRowsMerch: buildRawMasterRows('Merchandiser')
+    };
+    await uploadJsonToSharePoint(RUN_FILENAME, payload);
+  }catch(err){ console.error('Run snapshot save failed', err); }
+}
+async function loadRunSnapshot(){
+  return downloadJsonFromSharePoint(RUN_FILENAME);
+}
+function applyRunSnapshotToState(run){
+  if(!run) return false;
+  state.conflicts = run.conflicts || [];
+  state.otherExceptions = run.otherExceptions || [];
+  state.userLookup = new Map(Object.entries(run.userLookup || {}));
+  state.viewerRawMasterRows = { Rep: run.rawMasterRowsRep||[], Merchandiser: run.rawMasterRowsMerch||[] };
+  state.sharedRunMeta = { timestamp: run.timestamp, processedBy: run.processedBy };
+  return true;
+}
+async function loadSharedRunIfNeeded(){
+  if(state.agg) return; // this browser has its own live processed data - that always wins
+  try{
+    const run = await loadRunSnapshot();
+    applyRunSnapshotToState(run);
+  }catch(err){ console.error('Shared run load failed', err); }
+}
+// Merges a single conflict's new status into the shared file, re-fetching first
+// so a colleague's change to a *different* conflict a moment ago isn't lost.
+async function syncConflictChangeToShared(ids){
+  const idList = Array.isArray(ids) ? ids : [ids];
+  try{
+    let latest = await loadRunSnapshot();
+    if(!latest){ await saveRunSnapshot(); return; }
+    latest.conflicts = latest.conflicts || [];
+    idList.forEach(id=>{
+      const mine = state.conflicts.find(c=>c.id===id);
+      if(!mine) return;
+      const idx = latest.conflicts.findIndex(c=>c.id===id);
+      if(idx>=0) latest.conflicts[idx] = mine; else latest.conflicts.push(mine);
+    });
+    latest.timestamp = Date.now();
+    latest.processedBy = currentSignedInName();
+    if(state.agg){
+      // We have live data this session - refresh the raw master rows too.
+      latest.rawMasterRowsRep = buildRawMasterRows('Rep');
+      latest.rawMasterRowsMerch = buildRawMasterRows('Merchandiser');
+      const mergedUsers = Object.assign({}, latest.userLookup||{}, serializeUserLookupForShare());
+      latest.userLookup = mergedUsers;
+    }
+    await uploadJsonToSharePoint(RUN_FILENAME, latest);
+    // Reflect the merge locally too, so our own Master view (if we're a viewer) stays current.
+    state.viewerRawMasterRows = { Rep: latest.rawMasterRowsRep||(state.viewerRawMasterRows&&state.viewerRawMasterRows.Rep)||[],
+                                   Merchandiser: latest.rawMasterRowsMerch||(state.viewerRawMasterRows&&state.viewerRawMasterRows.Merchandiser)||[] };
+  }catch(err){ console.error('Conflict sync to SharePoint failed', err); }
+}
+async function refreshSharedRun(){
+  if(state.agg){
+    showToast('You have live processed data in this session, so there\'s nothing to pull in.', 'info', 'Nothing to refresh');
+    return;
+  }
+  try{
+    const run = await loadRunSnapshot();
+    if(!run){ showToast('No processed run found on SharePoint yet.', 'error', 'Refresh'); return; }
+    applyRunSnapshotToState(run);
+    renderExcSidebar(); populateExcFilterDropdowns(); renderExceptionsView();
+    showToast('Loaded the latest shared exceptions.', 'success', 'Refreshed');
+  }catch(err){
+    console.error(err);
+    showToast('Could not refresh from SharePoint. Check your connection and permissions.', 'error', 'Refresh failed');
+  }
 }
 
 async function saveDashboardSnapshot(){
@@ -2499,7 +2640,7 @@ function confirmConflict(id){
   if(!c || !c.resolvedUser) return;
   c.status = 'resolved';
   showToast(`${state.userLookup.get(c.resolvedUser).fullName} confirmed for ${c.storeName}.`, 'success', 'Conflict resolved');
-  renderConflictStats(); renderConflicts(); renderProcessingSummary(); saveState(); saveDashboardSnapshot();
+  renderConflictStats(); renderConflicts(); renderProcessingSummary(); saveState(); saveDashboardSnapshot(); syncConflictChangeToShared(id);
 }
 function keepBothConflict(id){
   const c = state.conflicts.find(x=>x.id===id);
@@ -2507,7 +2648,7 @@ function keepBothConflict(id){
   c.status = 'both-accepted';
   state.selectedConflicts.delete(id);
   showToast(`Both resources approved for ${c.storeName}.`, 'success', 'Override applied');
-  renderConflictStats(); renderConflicts(); renderProcessingSummary(); saveState(); saveDashboardSnapshot();
+  renderConflictStats(); renderConflicts(); renderProcessingSummary(); saveState(); saveDashboardSnapshot(); syncConflictChangeToShared(id);
 }
 function renderBulkBar(pendingVisibleCount){
   const bar = el('bulkBar');
@@ -2545,13 +2686,13 @@ function bulkKeepBoth(){
   });
   state.selectedConflicts.clear();
   showToast(`${ids.length} conflict(s) approved with both resources kept.`, 'success', 'Bulk approval complete');
-  renderConflictStats(); renderConflicts(); renderProcessingSummary(); saveState(); saveDashboardSnapshot();
+  renderConflictStats(); renderConflicts(); renderProcessingSummary(); saveState(); saveDashboardSnapshot(); syncConflictChangeToShared(ids);
 }
 function undoConflict(id){
   const c = state.conflicts.find(x=>x.id===id);
   if(!c) return;
   c.status = 'pending'; c.resolvedUser = null;
-  renderConflictStats(); renderConflicts(); renderProcessingSummary(); saveState(); saveDashboardSnapshot();
+  renderConflictStats(); renderConflicts(); renderProcessingSummary(); saveState(); saveDashboardSnapshot(); syncConflictChangeToShared(id);
 }
 function esc(str){ return String(str==null?'':str).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch])); }
 
@@ -2667,57 +2808,86 @@ function masterIssuesForRow(index, ucode, scode, dupCheck){
     return (rank[a.severity] ?? 3) - (rank[b.severity] ?? 3) || a.label.localeCompare(b.label);
   });
 }
-function buildMasterRows(bucket){
+function buildRawMasterRows(bucket){
+  // The expensive, agg-dependent half: everything about a row EXCEPT what depends
+  // on live conflict status. Safe to cache/share, since none of this changes when
+  // someone resolves a conflict later.
   const rows = [];
   const storeToUsers = bucket==='Rep' ? state.storeToReps : state.storeToMerch;
-  const exceptionIndex = buildMasterExceptionIndex();
-  const conflictMap = new Map(); // keyed by "storeCode|repType", Rep only
-  if(bucket==='Rep'){
-    state.conflicts.forEach(c=> conflictMap.set(c.storeCode+'|'+c.repType, c));
-  }
-
   state.agg.forEach((data, key)=>{
     const u = state.userLookup.get(data.ucode);
     if(!u || u.roleBucket !== bucket) return;
     const store = state.storeLookup.get(data.scode) || {};
     if(store.active !== true) return;
-    let dupCheck = 'OK';
-    if(bucket==='Rep'){
-      const conflict = conflictMap.get(data.scode+'|'+state.resourceTypeLabelFn(u, 'REP'));
-      if(conflict){
-        if(conflict.status==='both-accepted'){
-          dupCheck = 'KEPT BOTH - override confirmed';
-        } else if(conflict.status!=='resolved'){
-          dupCheck = 'UNRESOLVED REP CONFLICT - review exception';
-        } else if(conflict.resolvedUser!==data.ucode){
-          return; // resolved conflict: only the confirmed resource is included
-        } else {
-          dupCheck = 'RESOLVED - other candidate of same rep type excluded';
-        }
-      }
-    } else {
-      // Merchandisers: multiple per store is allowed, never held out
+    let baseDupCheck = 'OK';
+    if(bucket!=='Rep'){
       const usersAtStore = storeToUsers.get(data.scode) || new Set();
-      if(usersAtStore.size > 1) dupCheck = `OK - ${usersAtStore.size} merchandisers at this store (allowed)`;
+      if(usersAtStore.size > 1) baseDupCheck = `OK - ${usersAtStore.size} merchandisers at this store (allowed)`;
     }
     const weff = state.weeksEffectiveFn(data.weeks);
-    const recordIssues = masterIssuesForRow(exceptionIndex, data.ucode, data.scode, dupCheck);
     const row = {
       'STORE CODE': state.legacyStoreCodeLookup.get(data.scode) || '', 'STORE NAME': store.customerName||'', 'GEO REP STORE CODE': data.scode,
       'BANNER': store.banner||'', 'ACTIVE': store.active?'Y':'N', 'DIVISION': store.division||'',
       'CHANNEL': '', 'REGION': store.region||'',
       'RESOURCE EMP ID': data.ucode, 'RESOURCE NAME': u.fullName, 'RESOURCE TYPE': state.resourceTypeLabelFn(u, bucket),
       'EMAIL': u.email, 'CALLING FREQUENCY': state.callingFrequencyFn(u, data.weeks),
-      'MANAGER EMP CODE': u.managerCode, 'LINE MANAGER': u.managerName, 'DUPLICATED CHECK': dupCheck,
-      'RECORD STATUS': recordIssues.length ? 'REVIEW' : 'OK',
-      'EXCEPTION FLAGS': recordIssues.map(i=>i.label).join('; '),
-      'EXCEPTION NOTES': recordIssues.map(i=>`${i.label}: ${i.detail}`).join(' | ')
+      'MANAGER EMP CODE': u.managerCode, 'LINE MANAGER': u.managerName,
+      '_baseDupCheck': baseDupCheck, '_repTypeForConflict': bucket==='Rep' ? state.resourceTypeLabelFn(u, 'REP') : null
     };
     DAYS_ORDER.forEach(d=> row[d] = data.days.has(d) ? 'X' : '');
     for(let i=1;i<=4;i++) row[' WK'+i] = weff.has(String(i)) ? 'X' : '';
     rows.push(row);
   });
   return rows;
+}
+function applyConflictFilterToRows(rawRows, bucket){
+  // The cheap, conflict-dependent half. Works identically whether rawRows came
+  // from a live processing session or from a shared snapshot someone else saved -
+  // it only needs state.conflicts and state.otherExceptions, both of which are
+  // always current (live or loaded from SharePoint).
+  const exceptionIndex = buildMasterExceptionIndex();
+  const conflictMap = new Map();
+  if(bucket==='Rep'){
+    state.conflicts.forEach(c=> conflictMap.set(c.storeCode+'|'+c.repType, c));
+  }
+  const rows = [];
+  rawRows.forEach(raw=>{
+    let dupCheck = raw._baseDupCheck || 'OK';
+    if(bucket==='Rep'){
+      const conflict = conflictMap.get(raw['GEO REP STORE CODE']+'|'+raw._repTypeForConflict);
+      if(conflict){
+        if(conflict.status==='both-accepted'){
+          dupCheck = 'KEPT BOTH - override confirmed';
+        } else if(conflict.status!=='resolved'){
+          dupCheck = 'UNRESOLVED REP CONFLICT - review exception';
+        } else if(conflict.resolvedUser!==raw['RESOURCE EMP ID']){
+          return; // resolved conflict: only the confirmed resource is included
+        } else {
+          dupCheck = 'RESOLVED - other candidate of same rep type excluded';
+        }
+      }
+    }
+    const recordIssues = masterIssuesForRow(exceptionIndex, raw['RESOURCE EMP ID'], raw['GEO REP STORE CODE'], dupCheck);
+    const row = {
+      'STORE CODE': raw['STORE CODE'], 'STORE NAME': raw['STORE NAME'], 'GEO REP STORE CODE': raw['GEO REP STORE CODE'],
+      'BANNER': raw['BANNER'], 'ACTIVE': raw['ACTIVE'], 'DIVISION': raw['DIVISION'],
+      'CHANNEL': raw['CHANNEL'], 'REGION': raw['REGION'],
+      'RESOURCE EMP ID': raw['RESOURCE EMP ID'], 'RESOURCE NAME': raw['RESOURCE NAME'], 'RESOURCE TYPE': raw['RESOURCE TYPE'],
+      'EMAIL': raw['EMAIL'], 'CALLING FREQUENCY': raw['CALLING FREQUENCY'],
+      'MANAGER EMP CODE': raw['MANAGER EMP CODE'], 'LINE MANAGER': raw['LINE MANAGER'], 'DUPLICATED CHECK': dupCheck,
+      'RECORD STATUS': recordIssues.length ? 'REVIEW' : 'OK',
+      'EXCEPTION FLAGS': recordIssues.map(i=>i.label).join('; '),
+      'EXCEPTION NOTES': recordIssues.map(i=>`${i.label}: ${i.detail}`).join(' | ')
+    };
+    DAYS_ORDER.forEach(d=> row[d] = raw[d]);
+    for(let i=1;i<=4;i++) row[' WK'+i] = raw[' WK'+i];
+    rows.push(row);
+  });
+  return rows;
+}
+function buildMasterRows(bucket){
+  const raw = state.agg ? buildRawMasterRows(bucket) : ((state.viewerRawMasterRows && state.viewerRawMasterRows[bucket]) || []);
+  return applyConflictFilterToRows(raw, bucket);
 }
 
 function buildCombinedMaster(){
