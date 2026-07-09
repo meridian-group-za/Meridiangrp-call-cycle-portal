@@ -646,7 +646,7 @@
     <div class="panel-heading-row">
       <div>
         <h2>Validated Call-Cycle Master</h2>
-        <p class="hint">Review the final validated call-cycle master before export. Unresolved rep conflicts are included and clearly flagged in the master until confirmed.</p>
+        <p class="hint">Review the final validated call-cycle master before export. Any row with a matching exception is marked for review in the master.</p>
       </div>
       <div class="panel-heading-actions">
         <button class="ghost-btn" onclick="goToStep(2)">Back to exceptions</button>
@@ -2545,9 +2545,86 @@ function exportExceptions(){
 }
 
 // ---------- MASTER BUILD ----------
+function uniquePushIssue(list, seen, issue){
+  const key = issue.label + '|' + issue.detail;
+  if(seen.has(key)) return;
+  seen.add(key);
+  list.push(issue);
+}
+function addIssueToIndex(map, key, issue){
+  if(!key) return;
+  if(!map.has(key)) map.set(key, []);
+  map.get(key).push(issue);
+}
+function exceptionUserCodes(e, meta){
+  const codes = new Set();
+  if(e.userCode) codes.add(e.userCode);
+  if(meta.entityType === 'user'){
+    const display = displayEntity(e, meta);
+    if(display.code) codes.add(display.code);
+  }
+  if(e.cat === 'Duplicate email across reps' && state.userLookup){
+    state.userLookup.forEach((u, code)=>{
+      if(u.fullName && e.detail.includes(u.fullName)) codes.add(code);
+    });
+  }
+  return [...codes].filter(Boolean);
+}
+function exceptionStoreCodes(e, meta){
+  const codes = new Set();
+  if(e.storeCode) codes.add(e.storeCode);
+  if(meta.entityType === 'store'){
+    const parsed = parseEntity(e.detail);
+    if(parsed.code) codes.add(parsed.code);
+  }
+  const shouldReadStoreFromDetail = meta.entityType === 'store' || isSchedulePairCategory(e.cat) || e.cat === 'Inactive user still scheduled';
+  if(shouldReadStoreFromDetail){
+    const parsedStore = parseStoreCodeFromDetail(e.detail);
+    if(parsedStore) codes.add(parsedStore);
+  }
+  if(e.cat === 'Overlapping visits'){
+    const afterName = e.detail.split(':').slice(1).join(':');
+    (afterName.match(/\b[A-Za-z]{2,}\d+\b/g)||[]).forEach(code=>codes.add(code));
+  }
+  return [...codes].filter(Boolean);
+}
+function buildMasterExceptionIndex(){
+  const index = {byUser:new Map(), byStore:new Map(), byUserStore:new Map()};
+  (state.otherExceptions||[]).forEach(e=>{
+    if(!e || !e.cat || e.cat.startsWith('Naming convention inconsistency')) return;
+    const meta = getCategoryMeta(e.cat);
+    const label = categoryLabel(e.cat, meta);
+    const issue = {label, severity:meta.severity, detail:exceptionDetail(e)};
+    const userCodes = exceptionUserCodes(e, meta);
+    const storeCodes = exceptionStoreCodes(e, meta);
+    if(userCodes.length && storeCodes.length){
+      userCodes.forEach(ucode=>storeCodes.forEach(scode=>addIssueToIndex(index.byUserStore, ucode+'|'+scode, issue)));
+    } else if(storeCodes.length){
+      storeCodes.forEach(scode=>addIssueToIndex(index.byStore, scode, issue));
+    } else if(userCodes.length){
+      userCodes.forEach(ucode=>addIssueToIndex(index.byUser, ucode, issue));
+    }
+  });
+  return index;
+}
+function masterIssuesForRow(index, ucode, scode, dupCheck){
+  const issues = [];
+  const seen = new Set();
+  (index.byStore.get(scode)||[]).forEach(issue=>uniquePushIssue(issues, seen, issue));
+  (index.byUser.get(ucode)||[]).forEach(issue=>uniquePushIssue(issues, seen, issue));
+  (index.byUserStore.get(ucode+'|'+scode)||[]).forEach(issue=>uniquePushIssue(issues, seen, issue));
+  if(dupCheck && dupCheck.startsWith('UNRESOLVED REP CONFLICT')){
+    uniquePushIssue(issues, seen, {label:'Rep conflict', severity:'warning', detail:'Unresolved rep conflict - review the Exceptions screen.'});
+  }
+  return issues.sort((a,b)=>{
+    const rank = {critical:0, warning:1, info:2};
+    return (rank[a.severity] ?? 3) - (rank[b.severity] ?? 3) || a.label.localeCompare(b.label);
+  });
+}
 function buildMasterRows(bucket){
   const rows = [];
   const storeToUsers = bucket==='Rep' ? state.storeToReps : state.storeToMerch;
+  const exceptionIndex = buildMasterExceptionIndex();
   const conflictMap = new Map(); // keyed by "storeCode|repType", Rep only
   if(bucket==='Rep'){
     state.conflicts.forEach(c=> conflictMap.set(c.storeCode+'|'+c.repType, c));
@@ -2578,13 +2655,17 @@ function buildMasterRows(bucket){
       if(usersAtStore.size > 1) dupCheck = `OK - ${usersAtStore.size} merchandisers at this store (allowed)`;
     }
     const weff = state.weeksEffectiveFn(data.weeks);
+    const recordIssues = masterIssuesForRow(exceptionIndex, data.ucode, data.scode, dupCheck);
     const row = {
       'STORE CODE': state.legacyStoreCodeLookup.get(data.scode) || '', 'STORE NAME': store.customerName||'', 'GEO REP STORE CODE': data.scode,
       'BANNER': store.banner||'', 'ACTIVE': store.active?'Y':'N', 'DIVISION': store.division||'',
       'CHANNEL': '', 'REGION': store.region||'',
       'RESOURCE EMP ID': data.ucode, 'RESOURCE NAME': u.fullName, 'RESOURCE TYPE': state.resourceTypeLabelFn(u, bucket),
       'EMAIL': u.email, 'CALLING FREQUENCY': state.callingFrequencyFn(u, data.weeks),
-      'MANAGER EMP CODE': u.managerCode, 'LINE MANAGER': u.managerName, 'DUPLICATED CHECK': dupCheck
+      'MANAGER EMP CODE': u.managerCode, 'LINE MANAGER': u.managerName, 'DUPLICATED CHECK': dupCheck,
+      'RECORD STATUS': recordIssues.length ? 'REVIEW' : 'OK',
+      'EXCEPTION FLAGS': recordIssues.map(i=>i.label).join('; '),
+      'EXCEPTION NOTES': recordIssues.map(i=>`${i.label}: ${i.detail}`).join(' | ')
     };
     DAYS_ORDER.forEach(d=> row[d] = data.days.has(d) ? 'X' : '');
     for(let i=1;i<=4;i++) row[' WK'+i] = weff.has(String(i)) ? 'X' : '';
@@ -2609,16 +2690,18 @@ function renderMasterStats(){
   const repCount = all.filter(r=>r['RESOURCE TYPE'].includes('REP')).length;
   const merchCount = all.length - repCount;
   const pendingConflicts = state.conflicts.filter(c=>c.status==='pending').length;
+  const reviewRows = all.filter(r=>r['RECORD STATUS']==='REVIEW').length;
   el('statMasters').innerHTML = `
     <div class="stat-card resolved"><div class="num">${all.length}</div><div class="lbl">Total rows in combined master</div></div>
     <div class="stat-card"><div class="num">${repCount}</div><div class="lbl">Rep rows</div></div>
     <div class="stat-card"><div class="num">${merchCount}</div><div class="lbl">Merchandiser rows</div></div>
-    <div class="stat-card pending"><div class="num">${pendingConflicts}</div><div class="lbl">Flagged rep conflicts</div></div>`;
+    <div class="stat-card pending"><div class="num">${reviewRows}</div><div class="lbl">Rows needing review</div></div>`;
   const warning = el('unresolvedWarning');
-  if(pendingConflicts>0){
+  if(reviewRows>0){
     warning.classList.remove('step-hidden');
     warning.textContent = `${pendingConflicts} rep conflict(s) still unresolved — those stores are missing from the master until you confirm which candidate is correct.`;
-    warning.textContent = `${pendingConflicts} rep conflict(s) still unresolved - rows are included in the master and flagged in the Duplicated Check column.`;
+    warning.textContent = `${reviewRows} master row(s) have exception flags. Check RECORD STATUS, EXCEPTION FLAGS and EXCEPTION NOTES before release.`;
+    if(pendingConflicts>0) warning.textContent += ` ${pendingConflicts} unresolved rep conflict(s) are also flagged in DUPLICATED CHECK.`;
   } else warning.classList.add('step-hidden');
 }
 
@@ -2627,7 +2710,7 @@ function renderMasterTable(){
   const filter = state.masterFilter || 'all';
   if(filter !== 'all') rows = rows.filter(r=>r['RESOURCE TYPE'].includes(filter.toUpperCase()));
   const search = (el('masterSearch').value||'').toLowerCase();
-  const filtered = search ? rows.filter(r=>(r['STORE NAME']+r['RESOURCE NAME']+r['STORE CODE']+r['GEO REP STORE CODE']).toLowerCase().includes(search)) : rows;
+  const filtered = search ? rows.filter(r=>Object.values(r).join(' ').toLowerCase().includes(search)) : rows;
   const table = el('masterTable');
   if(rows.length===0){ table.innerHTML = '<tr><td class="empty-msg">No rows yet.</td></tr>'; return; }
   const cols = Object.keys(rows[0]);
