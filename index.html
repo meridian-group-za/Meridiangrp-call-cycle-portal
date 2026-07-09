@@ -684,18 +684,12 @@
     <div class="dashboard-top">
       <div>
         <h2>Management Dashboard</h2>
-        <p class="dashboard-sub">Operational view of active master coverage, conflicts and call-cycle composition.</p>
+        <p class="dashboard-sub">Operational view of active master coverage, conflicts and call-cycle composition. Shows the most recently processed run for the team — no need to re-upload unless you're processing a new one.</p>
       </div>
       <div class="dashboard-actions">
         <button class="ghost-btn" onclick="goToMasters()">Back to master</button>
         <button class="ghost-btn" onclick="goToStep(1)">Go to upload</button>
       </div>
-    </div>
-    <h2>Management Dashboard</h2>
-    <p class="hint">Shows your last saved run automatically — no need to re-upload. Updates the moment you resolve a new conflict.</p>
-    <div class="panel-heading-actions" style="margin:10px 0 14px;">
-      <button class="ghost-btn" onclick="goToMasters()">Back to master</button>
-      <button class="ghost-btn" onclick="goToStep(1)">Go to upload</button>
     </div>
     <div id="dashLastUpdated" style="font-size:11.5px;color:var(--blue-light);margin-bottom:14px;"></div>
 
@@ -813,7 +807,7 @@ async function initAuth(){
 function signIn(){
   if(!msalInstance) return;
   setAuthStatus('Redirecting to Microsoft sign-in…');
-  msalInstance.loginRedirect({ scopes: ["User.Read"] }).catch(err=>{
+  msalInstance.loginRedirect({ scopes: ["User.Read", "Files.ReadWrite"] }).catch(err=>{
     console.error(err);
     setAuthStatus('Sign-in was cancelled or failed. Please try again.', true);
   });
@@ -1594,6 +1588,59 @@ function goToDashboard(){
   loadAndRenderDashboard();
 }
 
+// ============================================================
+// SHARED DASHBOARD SNAPSHOT (SharePoint via Microsoft Graph)
+// ============================================================
+// Stores the "latest processed run" snapshot as a JSON file on a shared
+// Team site so every signed-in user sees the same dashboard, not just
+// whoever last processed the files in their own browser.
+const SHAREPOINT_HOSTNAME = 'meridiangroupza.sharepoint.com';
+const SHAREPOINT_SITE_PATH = 'sites/StockFixInventory';
+const SHAREPOINT_FOLDER_PATH = 'StockFix/Call Cycles';
+const SNAPSHOT_FILENAME = 'dashboard-latest.json';
+let cachedSharePointSiteId = null;
+
+async function getGraphToken(){
+  if(!msalInstance) throw new Error('Not signed in');
+  const account = msalInstance.getActiveAccount();
+  if(!account) throw new Error('Not signed in');
+  const result = await msalInstance.acquireTokenSilent({ scopes:['Files.ReadWrite'], account });
+  return result.accessToken;
+}
+async function getSharePointSiteId(){
+  if(cachedSharePointSiteId) return cachedSharePointSiteId;
+  const token = await getGraphToken();
+  const res = await fetch(`https://graph.microsoft.com/v1.0/sites/${SHAREPOINT_HOSTNAME}:/${SHAREPOINT_SITE_PATH}`, {
+    headers: { Authorization: 'Bearer ' + token }
+  });
+  if(!res.ok) throw new Error('Could not resolve SharePoint site (status '+res.status+')');
+  const data = await res.json();
+  cachedSharePointSiteId = data.id;
+  return cachedSharePointSiteId;
+}
+async function saveSnapshotToSharePoint(snapshot){
+  const token = await getGraphToken();
+  const siteId = await getSharePointSiteId();
+  const path = encodeURI(`${SHAREPOINT_FOLDER_PATH}/${SNAPSHOT_FILENAME}`);
+  const res = await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/drive/root:/${path}:/content`, {
+    method: 'PUT',
+    headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+    body: JSON.stringify(snapshot)
+  });
+  if(!res.ok) throw new Error('Failed to save snapshot to SharePoint (status '+res.status+')');
+}
+async function loadSnapshotFromSharePoint(){
+  const token = await getGraphToken();
+  const siteId = await getSharePointSiteId();
+  const path = encodeURI(`${SHAREPOINT_FOLDER_PATH}/${SNAPSHOT_FILENAME}`);
+  const res = await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/drive/root:/${path}:/content`, {
+    headers: { Authorization: 'Bearer ' + token }
+  });
+  if(res.status === 404) return null;
+  if(!res.ok) throw new Error('Failed to load snapshot from SharePoint (status '+res.status+')');
+  return await res.json();
+}
+
 async function saveDashboardSnapshot(){
   try{
     const repRows = buildMasterRows('Rep');
@@ -1601,7 +1648,7 @@ async function saveDashboardSnapshot(){
     const snapshot = { timestamp: Date.now(), rep: summarizeMaster(repRows), merch: summarizeMaster(merchRows),
       overlap: computeOverlap(repRows, merchRows),
       conflicts: { pending: state.conflicts.filter(c=>c.status==='pending').length, resolved: state.conflicts.filter(c=>c.status==='resolved'||c.status==='both-accepted').length } };
-    await window.storage.set('dashboard-latest', JSON.stringify(snapshot), false);
+    await saveSnapshotToSharePoint(snapshot);
   }catch(err){ console.error('Dashboard snapshot save failed', err); }
 }
 
@@ -1622,9 +1669,8 @@ async function loadAndRenderDashboard(){
       conflicts: { pending: state.conflicts.filter(c=>c.status==='pending').length, resolved: state.conflicts.filter(c=>c.status==='resolved'||c.status==='both-accepted').length } };
   } else {
     try{
-      const res = await window.storage.get('dashboard-latest', false);
-      if(res && res.value) snapshot = JSON.parse(res.value);
-    }catch(e){ snapshot = null; }
+      snapshot = await loadSnapshotFromSharePoint();
+    }catch(e){ console.error('Dashboard snapshot load failed', e); snapshot = null; }
   }
   state.dashboardSnapshot = snapshot;
   renderDashboard();
