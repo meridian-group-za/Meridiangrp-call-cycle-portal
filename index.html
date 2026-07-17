@@ -3034,6 +3034,7 @@ function exportGatedExceptions(decision){
   XLSX.writeFile(wb, decision==='allow' ? 'Exceptions_Allowed_To_Master.xlsx' : 'Exceptions_Blocked_From_Master.xlsx');
   showToast('Exported '+rows.length+' '+(decision==='allow'?'allowed':'blocked')+' exception(s).', 'success', 'Export complete');
 }
+function renderMasterStats(){
   const all = buildCombinedMaster();
   const repCount = all.filter(r=>r['RESOURCE TYPE'].includes('REP')).length;
   const merchCount = all.length - repCount;
