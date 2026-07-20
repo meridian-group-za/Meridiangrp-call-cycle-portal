@@ -875,7 +875,7 @@ function isActiveStatus(value){
 
 let state = {
   files: {users:null, locations:null, schedules:null, previousMaster:null},
-  userLookup: null, storeLookup: null, agg: null,
+  userLookup: null, storeLookup: null, agg: null, merchHourRows: null,
   storeToReps: null, storeToMerch: null,
   conflicts: [], otherExceptions: [], selectedConflicts: new Set(), selectedExceptions: new Set(),
   conflictFilter: 'pending', masterTab: 'rep',
@@ -1736,7 +1736,8 @@ async function saveRunSnapshot(){
       userLookup: serializeUserLookupForShare(),
       rawMasterRowsRep: buildRawMasterRows('Rep'),
       rawMasterRowsMerch: buildRawMasterRows('Merchandiser'),
-      combinedMaster: buildCombinedMaster()
+      combinedMaster: buildCombinedMaster(),
+      merchHourRows: state.merchHourRows || []
     };
     await uploadJsonToSharePoint(RUN_FILENAME, payload);
   }catch(err){ console.error('Run snapshot save failed', err); }
@@ -1750,6 +1751,7 @@ function applyRunSnapshotToState(run){
   state.otherExceptions = run.otherExceptions || [];
   state.userLookup = new Map(Object.entries(run.userLookup || {}));
   state.viewerRawMasterRows = { Rep: run.rawMasterRowsRep||[], Merchandiser: run.rawMasterRowsMerch||[] };
+  state.merchHourRows = run.merchHourRows || [];
   state.sharedRunMeta = { timestamp: run.timestamp, processedBy: run.processedBy };
   return true;
 }
@@ -1782,6 +1784,7 @@ async function syncConflictChangeToShared(ids){
       latest.rawMasterRowsMerch = buildRawMasterRows('Merchandiser');
       const mergedUsers = Object.assign({}, latest.userLookup||{}, serializeUserLookupForShare());
       latest.userLookup = mergedUsers;
+      latest.merchHourRows = state.merchHourRows || [];
     }
     await uploadJsonToSharePoint(RUN_FILENAME, latest);
     // Reflect the merge locally too, so our own Master view (if we're a viewer) stays current.
@@ -3077,7 +3080,7 @@ function exportAll(){
   const combined = buildCombinedMaster();
   const wbMaster = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wbMaster, XLSX.utils.json_to_sheet(combined), 'Call Cycle Master');
-  XLSX.utils.book_append_sheet(wbMaster, XLSX.utils.json_to_sheet(state.merchHourRows), 'Merchandiser Hours');
+  XLSX.utils.book_append_sheet(wbMaster, XLSX.utils.json_to_sheet(state.merchHourRows || []), 'Merchandiser Hours');
   XLSX.writeFile(wbMaster, 'Call_Cycle_Masters.xlsx');
 
   exportExceptions();
@@ -3091,9 +3094,9 @@ function exportMerchHoursStandalone(){
   // Standalone Merchandiser Hours report - matches Nakita's GeoRep National template exactly,
   // for sending on its own without the combined Rep+Merchandiser master.
   const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(state.merchHourRows), 'National');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(state.merchHourRows || []), 'National');
   const custRows = [];
-  state.storeLookup.forEach((v, code)=>{
+  (state.storeLookup || new Map()).forEach((v, code)=>{
     if(v.active !== true) return;
     custRows.push({
     'Customer Name': v.customerName, 'Meridian Store Code': code, 'Banner': v.banner,
@@ -3102,7 +3105,7 @@ function exportMerchHoursStandalone(){
   });
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(custRows), 'Customer List');
   const userRows = [];
-  state.userLookup.forEach((u, code)=>{
+  (state.userLookup || new Map()).forEach((u, code)=>{
     if(u.roleBucket==='Merchandiser') userRows.push({
       'User Code': code, 'User Name': u.fullName, 'Role': u.role, 'Rep/Merch Type': u.repMerchType,
       'Contracted Hours': u.contractedHours, 'Status': u.status, 'Manager Code': u.managerCode, 'Manager Name': u.managerName
@@ -3149,7 +3152,7 @@ function renderBarList(containerId, data, max){
 
 
 function resetAll(){
-  state = {files:{users:null,locations:null,schedules:null,previousMaster:null}, userLookup:null, storeLookup:null, agg:null,
+  state = {files:{users:null,locations:null,schedules:null,previousMaster:null}, userLookup:null, storeLookup:null, agg:null, merchHourRows:null,
            storeToReps:null, storeToMerch:null, conflicts:[], otherExceptions:[], selectedConflicts:new Set(), selectedExceptions:new Set(), conflictFilter:'pending',
            reviewedCategories:new Set(), exportedCategories:new Set(), excSearch:'', excShowAll:false,
            masterTab:'rep', step:1, runId:null};
