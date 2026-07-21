@@ -1031,6 +1031,8 @@ function processFilesInner(){
     if(!code || storeLookup.has(code)) return;
     const status = s(r['Status']);
     const rawRegion = s(r['Region']) || s(r['Province']);
+    const assignedUserCodes = s(r['Assigned User Codes'])
+      .split(/[,;/]+/).map(x=>x.trim()).filter(Boolean);
     storeLookup.set(code, {
       customerName: s(r['Customer Name']),
       banner: s(r['Banner']),
@@ -1038,6 +1040,7 @@ function processFilesInner(){
       province: s(r['Province']),
       division: s(r['Division']),
       status, active: isActiveStatus(status),
+      assignedUserCodes,
     });
   });
 
@@ -1162,6 +1165,32 @@ function processFilesInner(){
     if(hasRep && !hasMerch) other.push({cat:'Coverage gap - rep, no merchandiser', detail:`Store ${scode} (${v.customerName}) has a rep but no merchandiser`, region, banner});
     else if(hasMerch && !hasRep) other.push({cat:'Coverage gap - merchandiser, no rep', detail:`Store ${scode} (${v.customerName}) has a merchandiser but no rep`, region, banner});
     else if(!hasRep && !hasMerch) other.push({cat:'Coverage gap - no coverage at all', detail:`Store ${scode} (${v.customerName}) is Active with zero scheduled visits`, region, banner});
+  });
+
+  // UNSCHEDULED-BUT-ASSIGNED STORES: for a store flagged "no coverage at all" above
+  // (zero schedule rows for any role), if the Locations Export still lists an
+  // Assigned User Code for a real, known user, add a placeholder entry so the
+  // store/resource still surfaces in the master (with blank day/week columns)
+  // instead of disappearing entirely. The "Active Stores with No Scheduled
+  // Visits" exception still fires as usual (computed above, before this runs)
+  // and stays attached to the row via the store code, so Allow/Block still work.
+  storeLookup.forEach((v, scode)=>{
+    if(!v.active) return;
+    if(storeToReps.has(scode) || storeToMerch.has(scode)) return;
+    (v.assignedUserCodes||[]).forEach(ucode=>{
+      const u = userLookup.get(ucode);
+      if(!u || (u.roleBucket!=='Rep' && u.roleBucket!=='Merchandiser')) return;
+      const key = ucode+'|'+scode;
+      if(agg.has(key)) return;
+      agg.set(key, {weeks:new Set(), days:new Set(), ucode, scode, _noSchedule:true});
+      if(u.roleBucket==='Rep'){
+        if(!storeToReps.has(scode)) storeToReps.set(scode, new Set());
+        storeToReps.get(scode).add(ucode);
+      } else {
+        if(!storeToMerch.has(scode)) storeToMerch.set(scode, new Set());
+        storeToMerch.get(scode).add(ucode);
+      }
+    });
   });
 
   // NAMING CONVENTION INCONSISTENCIES - same real-world value spelled differently
@@ -2919,7 +2948,11 @@ function buildRawMasterRows(bucket){
     const u = state.userLookup.get(data.ucode);
     if(!u || u.roleBucket !== bucket) return;
     const store = state.storeLookup.get(data.scode) || {};
-    if(store.active !== true) return;
+    // Inactive/orphan stores are no longer dropped here unconditionally - every
+    // such row already has a matching "Inactive store still scheduled" or
+    // "Orphan store - not in Locations Export" exception (see OTHER EXCEPTIONS
+    // above), so applyConflictFilterToRows's normal Allow/Block gate decides
+    // whether it actually reaches the master, same as every other exception type.
     let baseDupCheck = 'OK';
     if(bucket!=='Rep'){
       const usersAtStore = storeToUsers.get(data.scode) || new Set();
