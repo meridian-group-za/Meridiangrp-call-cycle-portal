@@ -1759,6 +1759,7 @@ async function loadSharedRunIfNeeded(){
   if(state.agg) return; // this browser has its own live processed data - that always wins
   try{
     const run = await loadRunSnapshot();
+    if(state.agg) return; // local processing finished while the shared run was loading - local data wins
     applyRunSnapshotToState(run);
   }catch(err){ console.error('Shared run load failed', err); }
 }
@@ -1800,6 +1801,7 @@ async function refreshSharedRun(){
   try{
     const run = await loadRunSnapshot();
     if(!run){ showToast('No processed run found on SharePoint yet.', 'error', 'Refresh'); return; }
+    if(state.agg){ showToast('You have live processed data in this session, so there\'s nothing to pull in.', 'info', 'Nothing to refresh'); return; }
     applyRunSnapshotToState(run);
     renderExcSidebar(); populateExcFilterDropdowns(); renderExceptionsView();
     showToast('Loaded the latest shared exceptions.', 'success', 'Refreshed');
