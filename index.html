@@ -1152,7 +1152,7 @@ function processFilesInner(){
       seenOrphanStores.add(data.scode);
     }
     if(u && u.status==='inactive'){
-      other.push({cat:'Inactive user still scheduled', detail:`${u.fullName} (${data.ucode}) is inactive but has schedule rows at store ${data.scode}`, region, banner});
+      other.push({cat:'Inactive user still scheduled', userCode:data.ucode, userName:u.fullName, detail:`${u.fullName} (${data.ucode}) is inactive but has schedule rows at store ${data.scode}`, region, banner});
     }
     if(st && !st.active){
       other.push({cat:'Inactive store still scheduled', detail:`Store ${data.scode} (${st.customerName}) status is '${st.status}' but has schedule rows`, region, banner});
@@ -1317,7 +1317,7 @@ function processFilesInner(){
   const scheduledUserCodes = new Set([...agg.values()].map(d=>d.ucode));
   userLookup.forEach((u, code)=>{
     if((u.roleBucket==='Rep' || u.roleBucket==='Merchandiser') && u.status==='active' && !scheduledUserCodes.has(code)){
-      other.push({cat:'Active user with no schedule', detail:`${u.fullName} (${code}) is active but has no call cycle at all`, region:'', banner:''});
+      other.push({cat:'Active user with no schedule', userCode:code, userName:u.fullName, detail:`${u.fullName} (${code}) is active but has no call cycle at all`, region:'', banner:''});
     }
   });
 
@@ -1417,7 +1417,7 @@ function processFilesInner(){
   // User reports to themselves
   userLookup.forEach((u, code)=>{
     if(scheduledUserCodes.has(code) && u.managerCode && u.managerCode === code){
-      other.push({cat:'User reports to themselves', detail:`${u.fullName} (${code}) has their own User Code as Manager Emp Code`, region:'', banner:''});
+      other.push({cat:'User reports to themselves', userCode:code, userName:u.fullName, detail:`${u.fullName} (${code}) has their own User Code as Manager Emp Code`, region:'', banner:''});
     }
   });
 
@@ -1428,7 +1428,7 @@ function processFilesInner(){
     if(!u || !u.managerCode || seenInactiveMgr.has(code)) return;
     const mgr = userLookup.get(u.managerCode);
     if(mgr && mgr.status==='inactive'){
-      other.push({cat:'Inactive manager assigned', detail:`${u.fullName} (${code}) reports to ${mgr.fullName}, who is inactive`, region:'', banner:''});
+      other.push({cat:'Inactive manager assigned', userCode:code, userName:u.fullName, detail:`${u.fullName} (${code}) reports to ${mgr.fullName}, who is inactive`, region:'', banner:''});
       seenInactiveMgr.add(code);
     }
   });
@@ -1500,8 +1500,8 @@ function processFilesInner(){
     const managers = new Set(rows.map(r=>s(r['Manager Name'])).filter(Boolean));
     const roles = new Set(rows.map(r=>s(r['Role'])).filter(Boolean));
     const name = (s(rows[0]['User Name'])+' '+s(rows[0]['Surname'])).trim();
-    if(managers.size>1) other.push({cat:'Same rep, multiple managers (source data)', detail:`${name} (${code}) appears with different managers in User List: ${[...managers].join(', ')}`, region:'', banner:''});
-    if(roles.size>1) other.push({cat:'Same rep, multiple roles (source data)', detail:`${name} (${code}) appears with different roles in User List: ${[...roles].join(', ')}`, region:'', banner:''});
+    if(managers.size>1) other.push({cat:'Same rep, multiple managers (source data)', userCode:code, userName:name, detail:`${name} (${code}) appears with different managers in User List: ${[...managers].join(', ')}`, region:'', banner:''});
+    if(roles.size>1) other.push({cat:'Same rep, multiple roles (source data)', userCode:code, userName:name, detail:`${name} (${code}) appears with different roles in User List: ${[...roles].join(', ')}`, region:'', banner:''});
   });
 
   // EX6 - no call days assigned at all (safety net - shouldn't normally happen)
@@ -1521,7 +1521,7 @@ function processFilesInner(){
   activeResourceCodes.forEach(code=>{
     const u = userLookup.get(code);
     if(u && !u.email && !seenNoEmail.has(code)){
-      other.push({cat:'No email address', detail:`${u.fullName} (${code}) has no email on file`, region:'', banner:''});
+      other.push({cat:'No email address', userCode:code, userName:u.fullName, detail:`${u.fullName} (${code}) has no email on file`, region:'', banner:''});
       seenNoEmail.add(code);
     }
   });
@@ -1530,7 +1530,7 @@ function processFilesInner(){
   const seenEmailInName = new Set();
   userLookup.forEach((u, code)=>{
     if(activeResourceCodes.has(code) && /@|\.com|\.co\.za/i.test(u.fullName) && !seenEmailInName.has(code)){
-      other.push({cat:'Email found in name field', detail:`"${u.fullName}" (${code}) looks like an email address was entered instead of a name`, region:'', banner:''});
+      other.push({cat:'Email found in name field', userCode:code, userName:u.fullName, detail:`"${u.fullName}" (${code}) looks like an email address was entered instead of a name`, region:'', banner:''});
       seenEmailInName.add(code);
     }
   });
@@ -1545,7 +1545,7 @@ function processFilesInner(){
   byEmail.forEach((codes, email)=>{
     if(codes.size>1){
       const names = [...codes].map(c=>userLookup.get(c).fullName);
-      other.push({cat:'Duplicate email across reps', detail:`"${email}" is shared by ${codes.size} people: ${names.join(', ')} — will cause login conflicts`, region:'', banner:''});
+      other.push({cat:'Duplicate email across reps', userCode:[...codes][0], userName:names[0], detail:`"${email}" is shared by ${codes.size} people: ${names.join(', ')} — will cause login conflicts`, region:'', banner:''});
     }
   });
 
@@ -1554,7 +1554,7 @@ function processFilesInner(){
   activeResourceCodes.forEach(code=>{
     const u = userLookup.get(code);
     if(u && !u.managerCode && !seenNoMgr.has(code)){
-      other.push({cat:'No manager assigned', detail:`${u.fullName} (${code}) has no Manager Emp Code set`, region:'', banner:''});
+      other.push({cat:'No manager assigned', userCode:code, userName:u.fullName, detail:`${u.fullName} (${code}) has no Manager Emp Code set`, region:'', banner:''});
       seenNoMgr.add(code);
     }
   });
@@ -1564,7 +1564,7 @@ function processFilesInner(){
   activeResourceCodes.forEach(code=>{
     const u = userLookup.get(code);
     if(u && u.managerCode && !userLookup.has(u.managerCode) && !seenInvalidMgr.has(code)){
-      other.push({cat:'Invalid manager code', detail:`${u.fullName} (${code}) has Manager Emp Code "${u.managerCode}" which doesn't match anyone in User List`, region:'', banner:''});
+      other.push({cat:'Invalid manager code', userCode:code, userName:u.fullName, detail:`${u.fullName} (${code}) has Manager Emp Code "${u.managerCode}" which doesn't match anyone in User List`, region:'', banner:''});
       seenInvalidMgr.add(code);
     }
   });
