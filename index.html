@@ -1738,12 +1738,14 @@ async function loadSnapshotFromSharePoint(){ return downloadJsonFromSharePoint(S
 const RUN_FILENAME = 'run-latest.json';
 
 function serializeUserLookupForShare(){
-  // Keep this small: only the users referenced by conflicts (candidates + resolvedUser).
+  // Keep this small: only the users referenced by conflicts (candidates + resolvedUser)
+  // plus anyone referenced by other-exception categories (resource type lookups need them too).
   const relevant = new Set();
   state.conflicts.forEach(c=>{
     (c.candidates||[]).forEach(cd=>relevant.add(cd.ucode));
     if(c.resolvedUser) relevant.add(c.resolvedUser);
   });
+  (state.otherExceptions||[]).forEach(it=>{ if(it.userCode) relevant.add(it.userCode); });
   const out = {};
   relevant.forEach(ucode=>{
     const u = state.userLookup.get(ucode);
