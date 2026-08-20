@@ -683,6 +683,7 @@
       <div class="master-tab-btn active" data-mf="all" onclick="setMasterFilter('all')">All resources</div>
       <div class="master-tab-btn" data-mf="Rep" onclick="setMasterFilter('Rep')">Reps only</div>
       <div class="master-tab-btn" data-mf="Merchandiser" onclick="setMasterFilter('Merchandiser')">Merchandisers only</div>
+      <div class="master-tab-btn" data-mf="Other" onclick="setMasterFilter('Other')">Other resources only</div>
     </div>
     <div class="stat-row" id="statMasters"></div>
     <div class="exc-filter-bar" id="masterGatePills" style="align-items:center;"></div>
@@ -735,6 +736,7 @@
     <div class="master-tabs">
       <div class="master-tab-btn active" data-df="Rep" onclick="setDashboardFilter('Rep')">Reps</div>
       <div class="master-tab-btn" data-df="Merchandiser" onclick="setDashboardFilter('Merchandiser')">Merchandisers</div>
+      <div class="master-tab-btn" data-df="Other" onclick="setDashboardFilter('Other')">Other</div>
     </div>
 
     <div class="stat-row" id="dashHeadline"></div>
@@ -893,6 +895,12 @@ function roleBucket(role){
   role = s(role);
   if(MERCH_ROLES.has(role)) return 'Merchandiser';
   if(REP_ROLES.has(role)) return 'Rep';
+  // Any other non-blank role (e.g. Team Leader) still gets scheduled, exported
+  // and counted -- it just isn't a Rep or a Merchandiser, so it's treated like
+  // a Merchandiser for conflict purposes (no conflict concept) but kept in its
+  // own bucket so it's labelled correctly everywhere. Only a genuinely blank
+  // role is dropped.
+  if(role) return 'Other';
   return 'Excluded';
 }
 
@@ -1101,7 +1109,7 @@ function processFilesInner(){
 
   // STORE -> USERS BY BUCKET (merchandisers: no conflict concept, multiple is allowed)
   // Reps: conflict only within the SAME store + SAME rep/merch type
-  const storeToReps = new Map(), storeToMerch = new Map(), storeTypeToReps = new Map();
+  const storeToReps = new Map(), storeToMerch = new Map(), storeToOther = new Map(), storeTypeToReps = new Map();
   agg.forEach((data, key)=>{
     const u = userLookup.get(data.ucode);
     if(!u) return;
@@ -1114,6 +1122,9 @@ function processFilesInner(){
     } else if(u.roleBucket==='Merchandiser'){
       if(!storeToMerch.has(data.scode)) storeToMerch.set(data.scode, new Set());
       storeToMerch.get(data.scode).add(data.ucode);
+    } else if(u.roleBucket==='Other'){
+      if(!storeToOther.has(data.scode)) storeToOther.set(data.scode, new Set());
+      storeToOther.get(data.scode).add(data.ucode);
     }
   });
 
@@ -1176,16 +1187,19 @@ function processFilesInner(){
   // and stays attached to the row via the store code, so Allow/Block still work.
   storeLookup.forEach((v, scode)=>{
     if(!v.active) return;
-    if(storeToReps.has(scode) || storeToMerch.has(scode)) return;
+    if(storeToReps.has(scode) || storeToMerch.has(scode) || storeToOther.has(scode)) return;
     (v.assignedUserCodes||[]).forEach(ucode=>{
       const u = userLookup.get(ucode);
-      if(!u || (u.roleBucket!=='Rep' && u.roleBucket!=='Merchandiser')) return;
+      if(!u || u.roleBucket==='Excluded') return;
       const key = ucode+'|'+scode;
       if(agg.has(key)) return;
       agg.set(key, {weeks:new Set(), days:new Set(), ucode, scode, _noSchedule:true});
       if(u.roleBucket==='Rep'){
         if(!storeToReps.has(scode)) storeToReps.set(scode, new Set());
         storeToReps.get(scode).add(ucode);
+      } else if(u.roleBucket==='Other'){
+        if(!storeToOther.has(scode)) storeToOther.set(scode, new Set());
+        storeToOther.get(scode).add(ucode);
       } else {
         if(!storeToMerch.has(scode)) storeToMerch.set(scode, new Set());
         storeToMerch.get(scode).add(ucode);
@@ -1316,7 +1330,7 @@ function processFilesInner(){
   // Active user with no schedule at all
   const scheduledUserCodes = new Set([...agg.values()].map(d=>d.ucode));
   userLookup.forEach((u, code)=>{
-    if((u.roleBucket==='Rep' || u.roleBucket==='Merchandiser') && u.status==='active' && !scheduledUserCodes.has(code)){
+    if(u.roleBucket!=='Excluded' && u.status==='active' && !scheduledUserCodes.has(code)){
       other.push({cat:'Active user with no schedule', userCode:code, userName:u.fullName, detail:`${u.fullName} (${code}) is active but has no call cycle at all`, region:'', banner:''});
     }
   });
@@ -1577,6 +1591,7 @@ function processFilesInner(){
   state.agg = agg;
   state.storeToReps = storeToReps;
   state.storeToMerch = storeToMerch;
+  state.storeToOther = storeToOther;
   state.conflicts = conflicts;
   other.forEach((e,i)=>{ e.id = 'oe'+i; e.decision = e.decision || null; });
   state.otherExceptions = other;
@@ -1767,6 +1782,7 @@ async function saveRunSnapshot(){
       userLookup: serializeUserLookupForShare(),
       rawMasterRowsRep: buildRawMasterRows('Rep'),
       rawMasterRowsMerch: buildRawMasterRows('Merchandiser'),
+      rawMasterRowsOther: buildRawMasterRows('Other'),
       combinedMaster: buildCombinedMaster(),
       merchHourRows: state.merchHourRows || []
     };
@@ -1781,7 +1797,7 @@ function applyRunSnapshotToState(run){
   state.conflicts = run.conflicts || [];
   state.otherExceptions = run.otherExceptions || [];
   state.userLookup = new Map(Object.entries(run.userLookup || {}));
-  state.viewerRawMasterRows = { Rep: run.rawMasterRowsRep||[], Merchandiser: run.rawMasterRowsMerch||[] };
+  state.viewerRawMasterRows = { Rep: run.rawMasterRowsRep||[], Merchandiser: run.rawMasterRowsMerch||[], Other: run.rawMasterRowsOther||[] };
   state.merchHourRows = run.merchHourRows || [];
   state.sharedRunMeta = { timestamp: run.timestamp, processedBy: run.processedBy };
   return true;
@@ -1814,6 +1830,7 @@ async function syncConflictChangeToShared(ids){
       // We have live data this session - refresh the raw master rows too.
       latest.rawMasterRowsRep = buildRawMasterRows('Rep');
       latest.rawMasterRowsMerch = buildRawMasterRows('Merchandiser');
+      latest.rawMasterRowsOther = buildRawMasterRows('Other');
       const mergedUsers = Object.assign({}, latest.userLookup||{}, serializeUserLookupForShare());
       latest.userLookup = mergedUsers;
       latest.merchHourRows = state.merchHourRows || [];
@@ -1846,7 +1863,8 @@ async function saveDashboardSnapshot(){
   try{
     const repRows = buildMasterRows('Rep');
     const merchRows = buildMasterRows('Merchandiser');
-    const snapshot = { timestamp: Date.now(), rep: summarizeMaster(repRows), merch: summarizeMaster(merchRows),
+    const otherRows = buildMasterRows('Other');
+    const snapshot = { timestamp: Date.now(), rep: summarizeMaster(repRows), merch: summarizeMaster(merchRows), other: summarizeMaster(otherRows),
       overlap: computeOverlap(repRows, merchRows),
       conflicts: { pending: state.conflicts.filter(c=>c.status==='pending').length, resolved: state.conflicts.filter(c=>c.status==='resolved'||c.status==='both-accepted').length } };
     await saveSnapshotToSharePoint(snapshot);
@@ -1864,8 +1882,8 @@ async function loadAndRenderDashboard(){
   let snapshot = null;
   if(state.agg){
     // live session data takes priority - always current
-    const repRows = buildMasterRows('Rep'), merchRows = buildMasterRows('Merchandiser');
-    snapshot = { timestamp: Date.now(), rep: summarizeMaster(repRows), merch: summarizeMaster(merchRows),
+    const repRows = buildMasterRows('Rep'), merchRows = buildMasterRows('Merchandiser'), otherRows = buildMasterRows('Other');
+    snapshot = { timestamp: Date.now(), rep: summarizeMaster(repRows), merch: summarizeMaster(merchRows), other: summarizeMaster(otherRows),
       overlap: computeOverlap(repRows, merchRows),
       conflicts: { pending: state.conflicts.filter(c=>c.status==='pending').length, resolved: state.conflicts.filter(c=>c.status==='resolved'||c.status==='both-accepted').length } };
   } else {
@@ -1994,7 +2012,8 @@ function setSelectOptions(selectId, values, allLabel){
 function populateDashboardFilters(snap){
   const repRows = dashboardRowsFor(snap, 'rep') || [];
   const merchRows = dashboardRowsFor(snap, 'merch') || [];
-  const allRows = repRows.concat(merchRows);
+  const otherRows = dashboardRowsFor(snap, 'other') || [];
+  const allRows = repRows.concat(merchRows).concat(otherRows);
   setSelectOptions('dashRegionFilter', [...new Set(allRows.map(r=>r.region).filter(Boolean))].sort(), 'All regions');
   setSelectOptions('dashBannerFilter', [...new Set(allRows.map(r=>r.banner).filter(Boolean))].sort(), 'All banners');
   setSelectOptions('dashResourceTypeFilter', [...new Set(allRows.map(r=>r.resourceType).filter(Boolean))].sort(), 'All resource types');
@@ -2043,13 +2062,16 @@ function renderDashboard(){
   populateDashboardFilters(snap);
   const repRowsRaw = dashboardRowsFor(snap, 'rep');
   const merchRowsRaw = dashboardRowsFor(snap, 'merch');
+  const otherRowsRaw = dashboardRowsFor(snap, 'other');
   const hasDashboardDetail = !!(repRowsRaw && merchRowsRaw);
   const filters = dashboardFilterValues();
   const coverageSets = hasDashboardDetail ? dashboardCoverageSets(repRowsRaw, merchRowsRaw) : null;
   const repRows = hasDashboardDetail ? applyDashboardFilters(repRowsRaw, filters, coverageSets) : null;
   const merchRows = hasDashboardDetail ? applyDashboardFilters(merchRowsRaw, filters, coverageSets) : null;
+  const otherRows = otherRowsRaw ? applyDashboardFilters(otherRowsRaw, filters, coverageSets) : null;
   const repSummary = hasDashboardDetail ? summarizeDashboardRows(repRows) : snap.rep;
   const merchSummary = hasDashboardDetail ? summarizeDashboardRows(merchRows) : snap.merch;
+  const otherSummary = otherRows ? summarizeDashboardRows(otherRows) : (snap.other || {totalRows:0, distinctResources:0, storeCount:0, regionCounts:[], bannerCounts:[], freqCounts:[], typeCounts:[], rows:[]});
   const overlap = hasDashboardDetail ? computeOverlapFromDashboardRows(repRows, merchRows) : snap.overlap;
   const filteredStores = hasDashboardDetail ? (overlap.both + overlap.repOnly + overlap.merchOnly) : (snap.overlap.both + snap.overlap.repOnly + snap.overlap.merchOnly);
   const allFilterText = hasDashboardDetail
@@ -2076,8 +2098,8 @@ function renderDashboard(){
   renderAuditTrail();
 
   const filter = state.dashboardFilter || 'Rep';
-  const focus = filter==='Rep' ? repSummary : merchSummary;
-  const label = filter==='Rep' ? 'reps' : 'merchandisers';
+  const focus = filter==='Rep' ? repSummary : (filter==='Merchandiser' ? merchSummary : otherSummary);
+  const label = filter==='Rep' ? 'reps' : (filter==='Merchandiser' ? 'merchandisers' : 'other resources');
 
   el('dashHeadline').innerHTML = `
     <div class="stat-card resolved"><div class="num">${focus.distinctResources}</div><div class="lbl">Distinct ${label} in master</div></div>
@@ -2945,7 +2967,7 @@ function buildRawMasterRows(bucket){
   // on live conflict status. Safe to cache/share, since none of this changes when
   // someone resolves a conflict later.
   const rows = [];
-  const storeToUsers = bucket==='Rep' ? state.storeToReps : state.storeToMerch;
+  const storeToUsers = bucket==='Rep' ? state.storeToReps : (bucket==='Merchandiser' ? state.storeToMerch : state.storeToOther);
   state.agg.forEach((data, key)=>{
     const u = state.userLookup.get(data.ucode);
     if(!u || u.roleBucket !== bucket) return;
@@ -2958,7 +2980,7 @@ function buildRawMasterRows(bucket){
     let baseDupCheck = 'OK';
     if(bucket!=='Rep'){
       const usersAtStore = storeToUsers.get(data.scode) || new Set();
-      if(usersAtStore.size > 1) baseDupCheck = `OK - ${usersAtStore.size} merchandisers at this store (allowed)`;
+      if(usersAtStore.size > 1) baseDupCheck = `OK - ${usersAtStore.size} ${bucket==='Merchandiser'?'merchandisers':'resources'} at this store (allowed)`;
     }
     const weff = state.weeksEffectiveFn(data.weeks);
     const row = {
@@ -3029,7 +3051,7 @@ function buildMasterRows(bucket){
 }
 
 function buildCombinedMaster(){
-  const rows = [...buildMasterRows('Rep'), ...buildMasterRows('Merchandiser')];
+  const rows = [...buildMasterRows('Rep'), ...buildMasterRows('Merchandiser'), ...buildMasterRows('Other')];
   return rows.sort((a,b)=> (a['STORE NAME']||'').localeCompare(b['STORE NAME']||'') || (a['RESOURCE TYPE']||'').localeCompare(b['RESOURCE TYPE']||''));
 }
 
@@ -3077,7 +3099,8 @@ function exportGatedExceptions(decision){
 function renderMasterStats(){
   const all = buildCombinedMaster();
   const repCount = all.filter(r=>r['RESOURCE TYPE'].includes('REP')).length;
-  const merchCount = all.length - repCount;
+  const merchCount = all.filter(r=>r['RESOURCE TYPE'].includes('MERCHANDISER')).length;
+  const otherCount = all.length - repCount - merchCount;
   const pendingConflicts = state.conflicts.filter(c=>c.status==='pending').length;
   renderMasterGatePills();
   const reviewRows = all.filter(r=>r['RECORD STATUS']==='REVIEW').length;
@@ -3085,6 +3108,7 @@ function renderMasterStats(){
     <div class="stat-card resolved"><div class="num">${all.length}</div><div class="lbl">Total rows in combined master</div></div>
     <div class="stat-card"><div class="num">${repCount}</div><div class="lbl">Rep rows</div></div>
     <div class="stat-card"><div class="num">${merchCount}</div><div class="lbl">Merchandiser rows</div></div>
+    <div class="stat-card"><div class="num">${otherCount}</div><div class="lbl">Other resource rows</div></div>
     <div class="stat-card pending"><div class="num">${reviewRows}</div><div class="lbl">Rows needing review</div></div>`;
   const warning = el('unresolvedWarning');
   if(reviewRows>0){
@@ -3190,7 +3214,7 @@ function renderBarList(containerId, data, max){
 
 function resetAll(){
   state = {files:{users:null,locations:null,schedules:null,previousMaster:null}, userLookup:null, storeLookup:null, agg:null, merchHourRows:null,
-           storeToReps:null, storeToMerch:null, conflicts:[], otherExceptions:[], selectedConflicts:new Set(), selectedExceptions:new Set(), conflictFilter:'pending',
+           storeToReps:null, storeToMerch:null, storeToOther:null, conflicts:[], otherExceptions:[], selectedConflicts:new Set(), selectedExceptions:new Set(), conflictFilter:'pending',
            reviewedCategories:new Set(), exportedCategories:new Set(), excSearch:'', excShowAll:false,
            masterTab:'rep', step:1, runId:null};
   ['users','locations','schedules'].forEach(k=>{
